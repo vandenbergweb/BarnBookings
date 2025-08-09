@@ -76,7 +76,7 @@ export default function Home() {
             <div 
               className="h-48 bg-cover bg-center"
               style={{
-                backgroundImage: "url('https://images.unsplash.com/photo-1566577739112-5180d4bf9390?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80')"
+                backgroundImage: "url('/attached_assets/baseballbarn2_1754766048143.png')"
               }}
             >
               <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end">

@@ -6,13 +6,9 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertBookingSchema } from "@shared/schema";
 import { sendBookingReminder } from "./emailService";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-07-30.basil",
-});
+}) : null;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -124,6 +120,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe payment routes
   app.post("/api/create-payment-intent", isAuthenticated, async (req: any, res) => {
     try {
+      if (!stripe) {
+        return res.status(503).json({ 
+          message: "Payment processing is currently unavailable. Stripe is not configured." 
+        });
+      }
+
       const { amount, bookingId } = req.body;
       
       const paymentIntent = await stripe.paymentIntents.create({

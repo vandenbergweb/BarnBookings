@@ -18,7 +18,7 @@ export default function Landing() {
           <div 
             className="h-48 bg-cover bg-center"
             style={{
-              backgroundImage: "url('https://images.unsplash.com/photo-1566577739112-5180d4bf9390?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600')"
+              backgroundImage: "url('https://images.unsplash.com/photo-1614469723922-c0d0b4635148?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600')"
             }}
           >
             <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end">

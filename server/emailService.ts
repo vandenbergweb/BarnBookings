@@ -1,11 +1,9 @@
 import { MailService } from '@sendgrid/mail';
 
-if (!process.env.SENDGRID_API_KEY) {
-  throw new Error("SENDGRID_API_KEY environment variable must be set");
+const mailService = process.env.SENDGRID_API_KEY ? new MailService() : null;
+if (mailService && process.env.SENDGRID_API_KEY) {
+  mailService.setApiKey(process.env.SENDGRID_API_KEY);
 }
-
-const mailService = new MailService();
-mailService.setApiKey(process.env.SENDGRID_API_KEY);
 
 interface BookingReminderParams {
   to: string;
@@ -17,6 +15,11 @@ interface BookingReminderParams {
 }
 
 export async function sendBookingReminder(params: BookingReminderParams): Promise<boolean> {
+  if (!mailService) {
+    console.warn('SendGrid API key not configured. Email reminder not sent.');
+    return false;
+  }
+  
   try {
     const startTimeStr = params.startTime.toLocaleDateString('en-US', {
       weekday: 'long',

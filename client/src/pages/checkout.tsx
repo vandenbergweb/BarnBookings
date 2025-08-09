@@ -1,0 +1,237 @@
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { apiRequest } from "@/lib/queryClient";
+import type { Booking, Space, Bundle } from "@shared/schema";
+
+if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
+}
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+
+const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: string }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/dashboard`,
+      },
+    });
+
+    if (error) {
+      toast({
+        title: "Payment Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Payment Successful",
+        description: "Your booking has been confirmed!",
+      });
+      setLocation("/dashboard");
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Booking Summary */}
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="font-semibold text-barn-navy mb-3">Booking Details</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span>{spaceName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>{new Date(booking.startTime).toLocaleDateString()}</span>
+              <span>
+                {new Date(booking.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - 
+                {new Date(booking.endTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+              </span>
+            </div>
+            <div className="flex justify-between font-bold text-lg border-t border-barn-red pt-2 mt-3">
+              <span>Total</span>
+              <span data-testid="text-payment-total">${booking.totalAmount}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Payment Form */}
+      <Card>
+        <CardContent className="p-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <h4 className="font-semibold text-barn-navy mb-3">Payment Information</h4>
+              <PaymentElement />
+            </div>
+
+            <div className="flex items-start space-x-3 text-xs text-barn-gray">
+              <i className="fas fa-shield-alt text-barn-green mt-0.5"></i>
+              <p>
+                Your payment information is secure and encrypted. Full payment is due at booking. 
+                Cancellations must be made 24 hours in advance.
+              </p>
+            </div>
+
+            <Button 
+              type="submit" 
+              disabled={!stripe}
+              className="w-full bg-barn-red hover:bg-barn-red/90 text-white py-4 text-lg font-semibold flex items-center justify-center space-x-2"
+              data-testid="button-pay"
+            >
+              <i className="fas fa-lock"></i>
+              <span>Pay ${booking.totalAmount}</span>
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default function Checkout() {
+  const { toast } = useToast();
+  const { isAuthenticated, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+  const [clientSecret, setClientSecret] = useState("");
+
+  // Get booking ID from URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  const bookingId = urlParams.get('bookingId');
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Unauthorized",
+        description: "You are logged out. Logging in again...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+      return;
+    }
+  }, [isAuthenticated, isLoading, toast]);
+
+  // Redirect if no booking ID
+  useEffect(() => {
+    if (!bookingId) {
+      setLocation("/booking");
+    }
+  }, [bookingId, setLocation]);
+
+  const { data: booking } = useQuery<Booking>({
+    queryKey: ["/api/bookings", bookingId],
+    enabled: !!bookingId,
+    retry: false,
+  });
+
+  const { data: spaces } = useQuery<Space[]>({
+    queryKey: ["/api/spaces"],
+    retry: false,
+  });
+
+  const { data: bundles } = useQuery<Bundle[]>({
+    queryKey: ["/api/bundles"],
+    retry: false,
+  });
+
+  // Create payment intent
+  useEffect(() => {
+    if (booking && !clientSecret) {
+      apiRequest("POST", "/api/create-payment-intent", { 
+        amount: parseFloat(booking.totalAmount),
+        bookingId: booking.id 
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setClientSecret(data.clientSecret);
+        })
+        .catch((error) => {
+          toast({
+            title: "Payment Setup Failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        });
+    }
+  }, [booking, clientSecret, toast]);
+
+  if (isLoading || !booking || !clientSecret) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-sm mx-auto bg-white min-h-screen">
+          <header className="bg-barn-navy text-white p-4 flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mr-4 text-white hover:bg-barn-navy/80"
+              onClick={() => setLocation("/booking")}
+              data-testid="button-back"
+            >
+              <i className="fas fa-arrow-left text-xl"></i>
+            </Button>
+            <h2 className="text-lg font-bold">Payment</h2>
+            <i className="fas fa-lock ml-auto text-barn-green"></i>
+          </header>
+          
+          <div className="h-screen flex items-center justify-center">
+            <div className="animate-spin w-8 h-8 border-4 border-barn-navy border-t-transparent rounded-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const spaceName = booking.spaceId 
+    ? spaces?.find(s => s.id === booking.spaceId)?.name || 'Unknown Space'
+    : bundles?.find(b => b.id === booking.bundleId)?.name || 'Unknown Bundle';
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-sm mx-auto bg-white min-h-screen">
+        {/* Header */}
+        <header className="bg-barn-navy text-white p-4 flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mr-4 text-white hover:bg-barn-navy/80"
+            onClick={() => setLocation("/booking")}
+            data-testid="button-back"
+          >
+            <i className="fas fa-arrow-left text-xl"></i>
+          </Button>
+          <h2 className="text-lg font-bold">Payment</h2>
+          <i className="fas fa-lock ml-auto text-barn-green"></i>
+        </header>
+
+        <div className="p-4">
+          <Elements stripe={stripePromise} options={{ clientSecret }}>
+            <CheckoutForm booking={booking} spaceName={spaceName} />
+          </Elements>
+        </div>
+      </div>
+    </div>
+  );
+}

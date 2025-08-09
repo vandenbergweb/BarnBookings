@@ -10,6 +10,7 @@ import Navigation from "@/components/navigation";
 import SpaceCard from "@/components/space-card";
 import BundleCard from "@/components/bundle-card";
 import type { Space, Bundle } from "@shared/schema";
+import baseballImage from "@assets/baseballbarn2_1754766048143.png";
 
 export default function Home() {
   const { toast } = useToast();
@@ -76,7 +77,7 @@ export default function Home() {
             <div 
               className="h-48 bg-cover bg-center"
               style={{
-                backgroundImage: "url('/attached_assets/baseballbarn2_1754766048143.png')"
+                backgroundImage: `url(${baseballImage})`
               }}
             >
               <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end">

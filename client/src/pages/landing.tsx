@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import baseballImage from "@assets/baseballbarn2_1754766048143.png";
 
 export default function Landing() {
   return (
@@ -18,7 +19,7 @@ export default function Landing() {
           <div 
             className="h-48 bg-cover bg-center"
             style={{
-              backgroundImage: "url('/attached_assets/baseballbarn2_1754766048143.png')"
+              backgroundImage: `url(${baseballImage})`
             }}
           >
             <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end">

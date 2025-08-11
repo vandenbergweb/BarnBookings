@@ -7,6 +7,7 @@ import type { Express, RequestHandler } from "express";
 import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
+import { setupLocalAuth } from "./localAuth";
 
 if (!process.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
@@ -98,6 +99,9 @@ export async function setupAuth(app: Express) {
     passport.use(strategy);
   }
 
+  // Setup local authentication strategies
+  setupLocalAuth();
+
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
@@ -128,12 +132,18 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  const user = req.user as any;
-
-  if (!req.isAuthenticated() || !user.expires_at) {
+  if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
+  const user = req.user as any;
+
+  // For local auth users, just check if they're logged in
+  if (user.authProvider === 'local' || !user.expires_at) {
+    return next();
+  }
+
+  // For Replit auth users, check token expiration and refresh if needed
   const now = Math.floor(Date.now() / 1000);
   if (now <= user.expires_at) {
     return next();

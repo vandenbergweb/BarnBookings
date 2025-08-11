@@ -16,7 +16,16 @@ import { eq, and, gte, lte, desc } from "drizzle-orm";
 export interface IStorage {
   // User operations (required for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  createLocalUser(userData: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    passwordHash: string;
+    authProvider: 'local';
+    isEmailVerified: boolean;
+  }): Promise<User>;
   updateStripeCustomerId(userId: string, customerId: string): Promise<User>;
   
   // Space operations
@@ -56,6 +65,26 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date(),
         },
       })
+      .returning();
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createLocalUser(userData: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    passwordHash: string;
+    authProvider: 'local';
+    isEmailVerified: boolean;
+  }): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
       .returning();
     return user;
   }

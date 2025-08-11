@@ -40,13 +40,26 @@ export default function Landing() {
               <p className="text-barn-gray mb-6">
                 Michigan's premier indoor baseball practice facility with professional-grade equipment and flexible rental options for individuals and teams.
               </p>
-              <Button 
-                onClick={() => window.location.href = '/api/login'}
-                className="w-full bg-barn-red hover:bg-barn-red/90 text-white py-3 text-lg"
-                data-testid="button-login"
-              >
-                Sign In to Book Your Space
-              </Button>
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => window.location.href = '/login'}
+                  className="w-full bg-barn-red hover:bg-barn-red/90 text-white py-3 text-lg"
+                  data-testid="button-login"
+                >
+                  Sign In to Book Your Space
+                </Button>
+                
+                <div className="text-center">
+                  <span className="text-sm text-barn-gray">New to The Barn? </span>
+                  <button 
+                    onClick={() => window.location.href = '/register'}
+                    className="text-sm text-barn-navy font-semibold hover:underline"
+                    data-testid="link-register"
+                  >
+                    Create Account
+                  </button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </section>

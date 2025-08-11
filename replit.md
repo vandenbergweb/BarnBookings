@@ -26,20 +26,22 @@ Preferred communication style: Simple, everyday language.
 - **Build System**: ESBuild for production bundling
 
 ## Authentication System
-- **Provider**: Replit OpenID Connect authentication
+- **Dual Authentication**: Both local email/password and Replit OpenID Connect
+- **Local Auth**: Email/password registration with bcrypt password hashing
+- **Replit Auth**: OpenID Connect integration for Replit users
 - **Session Storage**: PostgreSQL-backed sessions using connect-pg-simple
-- **Authorization**: Route-level protection with middleware
-- **User Management**: Automatic user creation/updates on authentication
+- **Authorization**: Route-level protection with middleware supporting both auth types
+- **User Management**: Automatic user creation/updates for both authentication methods
 
 ## Database Architecture
 - **Database**: PostgreSQL with Neon serverless
 - **Schema Management**: Drizzle Kit for migrations
 - **Core Tables**:
-  - Users (with Stripe customer integration)
+  - Users (supports both local and Replit auth, includes password hashing, Stripe integration)
   - Spaces (facility rental areas)
   - Bundles (team package offerings)
   - Bookings (reservations with payment tracking)
-  - Sessions (authentication sessions)
+  - Sessions (authentication sessions for both auth types)
 
 ## Payment Processing
 - **Provider**: Stripe with React Stripe.js integration

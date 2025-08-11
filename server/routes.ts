@@ -1,7 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
+import passport from "passport";
 import { storage } from "./storage";
+import { registerSchema, loginSchema, type RegisterRequest, type LoginRequest } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertBookingSchema } from "@shared/schema";
 import { sendBookingReminder } from "./emailService";
@@ -17,14 +19,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize spaces and bundles data
   await initializeData();
 
+  // Local authentication routes
+  app.post('/api/auth/register', async (req, res) => {
+    try {
+      const validatedData = registerSchema.parse(req.body);
+      
+      // Use passport to handle registration
+      passport.authenticate('local-register', (err: any, user: any, info: any) => {
+        if (err) {
+          console.error('Registration error:', err);
+          return res.status(500).json({ message: 'Internal server error' });
+        }
+        
+        if (!user) {
+          return res.status(400).json({ message: info?.message || 'Registration failed' });
+        }
+        
+        // Log the user in after successful registration
+        req.logIn(user, (loginErr) => {
+          if (loginErr) {
+            console.error('Auto-login error:', loginErr);
+            return res.status(500).json({ message: 'Registration successful but login failed' });
+          }
+          
+          res.json({ 
+            message: 'Registration successful',
+            user: {
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+            }
+          });
+        });
+      })(req, res);
+    } catch (error: any) {
+      console.error('Registration validation error:', error);
+      res.status(400).json({ 
+        message: 'Validation failed',
+        errors: error.errors || [{ message: error.message }]
+      });
+    }
+  });
+
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const validatedData = loginSchema.parse(req.body);
+      
+      passport.authenticate('local-login', (err: any, user: any, info: any) => {
+        if (err) {
+          console.error('Login error:', err);
+          return res.status(500).json({ message: 'Internal server error' });
+        }
+        
+        if (!user) {
+          return res.status(401).json({ message: info?.message || 'Invalid credentials' });
+        }
+        
+        req.logIn(user, (loginErr) => {
+          if (loginErr) {
+            console.error('Login session error:', loginErr);
+            return res.status(500).json({ message: 'Login failed' });
+          }
+          
+          res.json({ 
+            message: 'Login successful',
+            user: {
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+            }
+          });
+        });
+      })(req, res);
+    } catch (error: any) {
+      console.error('Login validation error:', error);
+      res.status(400).json({ 
+        message: 'Validation failed',
+        errors: error.errors || [{ message: error.message }]
+      });
+    }
+  });
+
+  app.post('/api/auth/logout', (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        console.error('Logout error:', err);
+        return res.status(500).json({ message: 'Logout failed' });
+      }
+      res.json({ message: 'Logged out successfully' });
+    });
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      console.log("Fetching user with ID:", userId);
-      const user = await storage.getUser(userId);
+      let user;
+      
+      // Handle different auth types
+      if (req.user.authProvider === 'local') {
+        // For local auth, user object is the actual user record
+        user = req.user;
+      } else {
+        // For Replit auth, get user ID from claims
+        const userId = req.user.claims?.sub;
+        if (userId) {
+          user = await storage.getUser(userId);
+        }
+      }
+      
       console.log("User found:", user ? "Yes" : "No", user?.email);
-      res.json(user);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return user without sensitive information
+      const { passwordHash, ...safeUser } = user;
+      res.json(safeUser);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -56,7 +169,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Bookings routes
   app.get('/api/bookings', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      let userId;
+      
+      // Handle different auth types
+      if (req.user.authProvider === 'local') {
+        userId = req.user.id;
+      } else {
+        userId = req.user.claims?.sub;
+      }
+      
+      if (!userId) {
+        return res.status(400).json({ message: "User ID not found" });
+      }
+      
       const bookings = await storage.getUserBookings(userId);
       res.json(bookings);
     } catch (error) {
@@ -85,13 +210,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/bookings', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      let userId;
+      
+      // Handle different auth types
+      if (req.user.authProvider === 'local') {
+        userId = req.user.id;
+      } else {
+        userId = req.user.claims?.sub;
+      }
+      
+      if (!userId) {
+        return res.status(400).json({ message: "User ID not found" });
+      }
+      
       console.log("Creating booking for user:", userId);
       console.log("Request body:", req.body);
       
       // Ensure the user exists in the database
       let user = await storage.getUser(userId);
-      if (!user) {
+      if (!user && req.user.claims) {
+        // Only create user for Replit auth (local auth users already exist)
         console.log("User not found, creating user record");
         const claims = req.user.claims;
         await storage.upsertUser({
@@ -135,7 +273,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      const userId = req.user.claims.sub;
+      
+      let userId;
+      if (req.user.authProvider === 'local') {
+        userId = req.user.id;
+      } else {
+        userId = req.user.claims?.sub;
+      }
+      
+      if (!userId) {
+        return res.status(400).json({ message: "User ID not found" });
+      }
 
       // Verify the booking belongs to the user
       const existingBooking = await storage.getBooking(id);

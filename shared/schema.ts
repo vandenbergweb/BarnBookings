@@ -24,14 +24,18 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (required for Replit Auth)
+// User storage table (supports both local and Replit auth)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
+  email: varchar("email").unique().notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   stripeCustomerId: varchar("stripe_customer_id"),
+  // Local auth fields
+  passwordHash: varchar("password_hash"), // Only set for local accounts
+  isEmailVerified: boolean("is_email_verified").default(false),
+  authProvider: varchar("auth_provider").default("local"), // "local" or "replit"
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -102,3 +106,23 @@ export const insertUserSchema = createInsertSchema(users).pick({
   firstName: true,
   lastName: true,
 });
+
+// Local authentication schemas
+export const registerSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string(),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+export const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+export type RegisterRequest = z.infer<typeof registerSchema>;
+export type LoginRequest = z.infer<typeof loginSchema>;

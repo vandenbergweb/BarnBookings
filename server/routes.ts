@@ -154,7 +154,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe payment routes
   app.post("/api/create-payment-intent", isAuthenticated, async (req: any, res) => {
     try {
+      console.log("Creating payment intent request:", req.body);
+      
       if (!stripe) {
+        console.log("Stripe not configured, returning 503");
         return res.status(503).json({ 
           message: "Payment processing is currently unavailable. Stripe is not configured." 
         });

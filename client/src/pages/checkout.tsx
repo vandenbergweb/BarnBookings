@@ -157,13 +157,27 @@ export default function Checkout() {
 
   // Create payment intent
   useEffect(() => {
-    if (booking && !clientSecret && stripePromise) {
+    console.log("Payment intent effect:", { 
+      booking: !!booking, 
+      clientSecret: !!clientSecret, 
+      stripePromise: !!stripePromise 
+    });
+    
+    if (booking && !clientSecret) {
+      console.log("Creating payment intent for booking:", booking.id, "amount:", booking.totalAmount);
+      
+      if (!stripePromise) {
+        console.log("Stripe not configured, skipping payment intent creation");
+        return;
+      }
+      
       apiRequest("POST", "/api/create-payment-intent", { 
         amount: parseFloat(booking.totalAmount),
         bookingId: booking.id 
       })
         .then((res) => res.json())
         .then((data) => {
+          console.log("Payment intent created:", data);
           setClientSecret(data.clientSecret);
         })
         .catch((error) => {

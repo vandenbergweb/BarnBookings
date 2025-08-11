@@ -21,7 +21,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      console.log("Fetching user with ID:", userId);
       const user = await storage.getUser(userId);
+      console.log("User found:", user ? "Yes" : "No", user?.email);
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -86,6 +88,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       console.log("Creating booking for user:", userId);
       console.log("Request body:", req.body);
+      
+      // Ensure the user exists in the database
+      let user = await storage.getUser(userId);
+      if (!user) {
+        console.log("User not found, creating user record");
+        const claims = req.user.claims;
+        await storage.upsertUser({
+          id: claims.sub,
+          email: claims.email,
+          firstName: claims.first_name,
+          lastName: claims.last_name,
+          profileImageUrl: claims.profile_image_url,
+        });
+        user = await storage.getUser(userId);
+        console.log("User created:", user);
+      }
       
       const bookingData = insertBookingSchema.parse({
         ...req.body,

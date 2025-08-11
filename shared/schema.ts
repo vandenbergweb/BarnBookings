@@ -84,6 +84,11 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).refine((data) => {
+  // Either spaceId or bundleId must be provided, but not both
+  return (data.spaceId && !data.bundleId) || (!data.spaceId && data.bundleId);
+}, {
+  message: "Either spaceId or bundleId must be provided, but not both",
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

@@ -139,7 +139,7 @@ export default function Checkout() {
     }
   }, [bookingId, setLocation]);
 
-  const { data: booking } = useQuery<Booking>({
+  const { data: booking, isLoading: bookingLoading, error: bookingError } = useQuery<Booking>({
     queryKey: ["/api/bookings", bookingId],
     enabled: !!bookingId,
     retry: false,
@@ -187,7 +187,68 @@ export default function Checkout() {
     }
   }, [booking, clientSecret, toast]);
 
-  if (isLoading || !booking) {
+  // Add debug logging for loading states
+  console.log("Checkout render state:", { 
+    authLoading: isLoading, 
+    bookingLoading,
+    booking: !!booking, 
+    bookingId,
+    clientSecret: !!clientSecret,
+    stripeConfigured: !!stripePromise,
+    bookingError: !!bookingError
+  });
+
+  // Show error if booking fails to load
+  if (bookingError) {
+    console.log("Booking error:", bookingError);
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-sm mx-auto bg-white min-h-screen">
+          <header className="bg-barn-navy text-white p-4 flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mr-4 text-white hover:bg-barn-navy/80"
+              onClick={() => setLocation("/booking")}
+              data-testid="button-back"
+            >
+              <i className="fas fa-arrow-left text-xl"></i>
+            </Button>
+            <h2 className="text-lg font-bold">Payment</h2>
+          </header>
+          
+          <div className="p-4 text-center">
+            <i className="fas fa-exclamation-triangle text-barn-red text-3xl mb-3"></i>
+            <h3 className="font-semibold text-barn-navy mb-2">Booking Not Found</h3>
+            <p className="text-barn-gray mb-4">The booking could not be loaded. Please try again.</p>
+            <Button onClick={() => setLocation("/booking")} className="bg-barn-navy hover:bg-barn-navy/90 text-white">
+              Back to Booking
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Add a timeout to prevent infinite loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!booking && !bookingError && !isLoading) {
+        console.log("Checkout timeout - redirecting to booking");
+        toast({
+          title: "Loading Timeout",
+          description: "Taking too long to load. Please try again.",
+          variant: "destructive",
+        });
+        setLocation("/booking");
+      }
+    }, 10000); // 10 second timeout
+    
+    return () => clearTimeout(timer);
+  }, [booking, bookingError, isLoading, toast, setLocation]);
+
+  if (isLoading || bookingLoading || !booking) {
+    console.log("Showing loading screen - authLoading:", isLoading, "bookingLoading:", bookingLoading, "booking:", !!booking);
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-sm mx-auto bg-white min-h-screen">

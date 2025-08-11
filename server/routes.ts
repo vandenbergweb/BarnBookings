@@ -84,16 +84,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/bookings', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      console.log("Creating booking for user:", userId);
+      console.log("Request body:", req.body);
+      
       const bookingData = insertBookingSchema.parse({
         ...req.body,
         userId,
       });
+      
+      console.log("Parsed booking data:", bookingData);
 
       const booking = await storage.createBooking(bookingData);
+      console.log("Booking created successfully:", booking);
       res.json(booking);
     } catch (error) {
-      console.error("Error creating booking:", error);
-      res.status(500).json({ message: "Failed to create booking" });
+      console.error("Error creating booking - Full details:", error);
+      console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+      
+      if (error instanceof Error) {
+        res.status(500).json({ 
+          message: "Failed to create booking", 
+          error: error.message,
+          details: error.stack?.split('\n')[0] 
+        });
+      } else {
+        res.status(500).json({ message: "Failed to create booking", error: String(error) });
+      }
     }
   });
 

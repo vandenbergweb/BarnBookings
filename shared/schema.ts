@@ -84,6 +84,12 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  // Transform string dates to Date objects
+  startTime: z.union([z.date(), z.string().transform((str) => new Date(str))]),
+  endTime: z.union([z.date(), z.string().transform((str) => new Date(str))]),
+  // Transform number to string for decimal handling
+  totalAmount: z.union([z.string(), z.number().transform((num) => num.toString())]),
 }).refine((data) => {
   // Either spaceId or bundleId must be provided, but not both
   return (data.spaceId && !data.bundleId) || (!data.spaceId && data.bundleId);

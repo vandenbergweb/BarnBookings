@@ -117,28 +117,7 @@ export default function Checkout() {
   const urlParams = new URLSearchParams(window.location.search);
   const bookingId = urlParams.get('bookingId');
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
-
-  // Redirect if no booking ID
-  useEffect(() => {
-    if (!bookingId) {
-      setLocation("/booking");
-    }
-  }, [bookingId, setLocation]);
-
+  // Always call all hooks first before any conditional logic
   const { data: booking, isLoading: bookingLoading, error: bookingError } = useQuery<Booking>({
     queryKey: ["/api/bookings", bookingId],
     enabled: !!bookingId,
@@ -186,6 +165,28 @@ export default function Checkout() {
         });
     }
   }, [booking, clientSecret, toast]);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Unauthorized",
+        description: "You are logged out. Logging in again...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+      return;
+    }
+  }, [isAuthenticated, isLoading, toast]);
+
+  // Redirect if no booking ID
+  useEffect(() => {
+    if (!bookingId) {
+      setLocation("/booking");
+    }
+  }, [bookingId, setLocation]);
 
   // Add debug logging for loading states
   console.log("Checkout render state:", { 

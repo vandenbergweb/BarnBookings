@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import baseballImage from "@assets/baseballbarn2_1754766048143.png";
+import baseballLogo from "@assets/baseball_1754937097015.png";
 
 export default function Landing() {
   return (
@@ -8,7 +9,7 @@ export default function Landing() {
       {/* Header */}
       <header className="bg-barn-navy text-white p-4 flex justify-center items-center">
         <div className="flex items-center space-x-2">
-          <i className="fas fa-baseball-ball text-barn-red"></i>
+          <img src={baseballLogo} alt="The Barn MI" className="w-6 h-6" />
           <h1 className="text-lg font-bold">The Barn MI</h1>
         </div>
       </header>

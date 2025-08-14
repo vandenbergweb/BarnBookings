@@ -31,7 +31,7 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: window.location.origin,
+        return_url: `${window.location.origin}/payment-success?bookingId=${booking.id}`,
       },
     });
 
@@ -42,11 +42,8 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
         variant: "destructive",
       });
     } else {
-      toast({
-        title: "Payment Successful",
-        description: "Your booking has been confirmed!",
-      });
-      setLocation("/dashboard");
+      // This won't run for redirect-based payments, but keeping for non-redirect flows
+      setLocation(`/payment-success?bookingId=${booking.id}`);
     }
   };
 

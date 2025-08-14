@@ -10,6 +10,7 @@ import Register from "@/pages/register";
 import Home from "@/pages/home";
 import BookingPage from "@/pages/booking";
 import Checkout from "@/pages/checkout";
+import PaymentSuccess from "@/pages/payment-success";
 import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/booking" component={BookingPage} />
       <Route path="/checkout" component={Checkout} />
+      <Route path="/payment-success" component={PaymentSuccess} />
       <Route path="/dashboard" component={Dashboard} />
       <Route component={NotFound} />
     </Switch>

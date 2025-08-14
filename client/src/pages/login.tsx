@@ -31,8 +31,8 @@ export default function Login() {
       const result = await response.json();
       
       if (response.ok) {
-        // Redirect immediately without showing toast to avoid pop-up
-        setLocation("/");
+        // Force a full page reload to ensure auth state is refreshed
+        window.location.href = "/";
       } else {
         throw new Error(result.message || "Login failed");
       }

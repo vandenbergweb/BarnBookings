@@ -65,15 +65,16 @@ export default function Navigation({ currentPage }: NavigationProps) {
           </Link>
         )}
         
-        <Button 
-          variant="ghost" 
-          className={`flex flex-col items-center py-2 px-2 ${getButtonClass("profile")}`}
-          onClick={() => window.location.href = '/api/logout'}
-          data-testid="nav-profile"
-        >
-          <i className="fas fa-user text-lg mb-1"></i>
-          <span className="text-xs font-medium">Profile</span>
-        </Button>
+        <Link href="/profile">
+          <Button 
+            variant="ghost" 
+            className={`flex flex-col items-center py-2 px-2 ${getButtonClass("profile")}`}
+            data-testid="nav-profile"
+          >
+            <i className="fas fa-user text-lg mb-1"></i>
+            <span className="text-xs font-medium">Profile</span>
+          </Button>
+        </Link>
       </div>
     </nav>
   );

@@ -135,6 +135,24 @@ export default function Home() {
               ))}
             </div>
           </section>
+
+          {/* Location Info */}
+          <section className="p-4 mb-4">
+            <Card className="bg-barn-navy text-white">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-white text-barn-navy p-2 rounded-full">
+                    <i className="fas fa-map-marker-alt"></i>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Visit Us</h4>
+                    <p className="text-sm opacity-90">6090 W River Rd</p>
+                    <p className="text-sm opacity-90">Weidman, MI 48893</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
         </main>
 
         <Navigation currentPage="home" />

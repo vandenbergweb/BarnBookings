@@ -65,6 +65,7 @@ export async function sendBookingConfirmation(data: BookingConfirmationData): Pr
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #1e3a5f; margin-bottom: 10px;">The Barn MI</h1>
             <p style="color: #666; font-size: 18px; margin: 0;">Professional Baseball Training Facility</p>
+            <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">6090 W River Rd, Weidman MI 48893</p>
           </div>
 
           <div style="background-color: #22c55e; color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 30px;">
@@ -109,7 +110,8 @@ export async function sendBookingConfirmation(data: BookingConfirmationData): Pr
             <p style="margin: 0 0 15px 0; color: #666;">Questions about your booking?</p>
             <p style="margin: 0; font-weight: 600; color: #1e3a5f;">
               📧 info@thebarnmi.com<br>
-              📞 (555) 123-BARN
+              📞 (555) 123-BARN<br>
+              📍 6090 W River Rd, Weidman MI 48893
             </p>
           </div>
 
@@ -143,6 +145,7 @@ IMPORTANT REMINDERS:
 Questions? Contact us at:
 Email: info@thebarnmi.com
 Phone: (555) 123-BARN
+Address: 6090 W River Rd, Weidman MI 48893
 
 Booking ID: #${bookingId}
 
@@ -201,6 +204,7 @@ export async function sendBookingReminder(data: BookingReminderData): Promise<bo
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #1e3a5f; margin-bottom: 10px;">The Barn MI</h1>
             <p style="color: #666; font-size: 18px; margin: 0;">Professional Baseball Training Facility</p>
+            <p style="color: #666; font-size: 14px; margin: 5px 0 0 0;">6090 W River Rd, Weidman MI 48893</p>
           </div>
 
           <div style="background-color: #3b82f6; color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 30px;">
@@ -241,7 +245,8 @@ export async function sendBookingReminder(data: BookingReminderData): Promise<bo
             <p style="margin: 0 0 15px 0; color: #666;">Questions or need to reschedule?</p>
             <p style="margin: 0; font-weight: 600; color: #1e3a5f;">
               📧 info@thebarnmi.com<br>
-              📞 (555) 123-BARN
+              📞 (555) 123-BARN<br>
+              📍 6090 W River Rd, Weidman MI 48893
             </p>
           </div>
 
@@ -273,6 +278,7 @@ DON'T FORGET:
 Questions or need to reschedule?
 Email: info@thebarnmi.com
 Phone: (555) 123-BARN
+Address: 6090 W River Rd, Weidman MI 48893
 
 See you tomorrow!
 

@@ -1,6 +1,6 @@
 # Overview
 
-This is a React-based web application for "The Barn MI", a professional baseball training facility booking system. The application allows users to browse available practice spaces and team bundle packages, make bookings, and manage their reservations. It features a mobile-first design with authentication, payment processing via Stripe, and email notifications.
+This is a React-based web application for "The Barn MI", a professional baseball training facility booking system located at 6090 W River Rd, Weidman MI 48893. The application allows users to browse available practice spaces and team bundle packages, make bookings, and manage their reservations. It features a mobile-first design with authentication, payment processing via Stripe, and email notifications with facility location information.
 
 # User Preferences
 

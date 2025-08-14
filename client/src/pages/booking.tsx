@@ -352,6 +352,22 @@ export default function BookingPage() {
             </Card>
           )}
 
+          {/* Location Info */}
+          <Card className="bg-barn-navy text-white">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <div className="bg-white text-barn-navy p-2 rounded-full">
+                  <i className="fas fa-map-marker-alt"></i>
+                </div>
+                <div>
+                  <h4 className="font-semibold">Location</h4>
+                  <p className="text-sm opacity-90">6090 W River Rd</p>
+                  <p className="text-sm opacity-90">Weidman, MI 48893</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Book Button */}
           <Button
             onClick={handleBooking}

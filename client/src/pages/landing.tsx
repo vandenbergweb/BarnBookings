@@ -131,6 +131,25 @@ export default function Landing() {
             </Card>
           </div>
         </section>
+
+        {/* Location */}
+        <section className="p-4">
+          <h3 className="text-xl font-bold text-barn-navy mb-4">Location</h3>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-start space-x-3">
+                <div className="bg-barn-red text-white p-2 rounded-full">
+                  <i className="fas fa-map-marker-alt"></i>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-barn-navy">6090 W River Rd</h4>
+                  <p className="text-sm text-barn-gray">Weidman, MI 48893</p>
+                  <p className="text-xs text-barn-gray mt-2">Michigan's premier indoor baseball training facility</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
       </main>
     </div>
   );

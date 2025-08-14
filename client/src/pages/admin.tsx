@@ -127,10 +127,16 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-barn-navy text-white p-4 flex justify-center items-center">
-        <div className="flex items-center space-x-2">
-          <img src={baseballLogo} alt="The Barn MI" className="w-6 h-6" />
-          <h1 className="text-lg font-bold">The Barn MI - Admin Panel</h1>
+      <header className="bg-barn-navy text-white p-4">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <img src={baseballLogo} alt="The Barn MI" className="w-6 h-6" />
+            <h1 className="text-lg font-bold">The Barn MI - Admin Panel</h1>
+          </div>
+          <div className="text-right text-xs opacity-90">
+            <div>6090 W River Rd</div>
+            <div>Weidman, MI 48893</div>
+          </div>
         </div>
       </header>
 

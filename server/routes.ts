@@ -113,6 +113,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // GET logout route for direct browser navigation
+  app.get('/api/logout', (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        console.error('Logout error:', err);
+        return res.redirect('/login?error=logout_failed');
+      }
+      res.redirect('/login');
+    });
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {

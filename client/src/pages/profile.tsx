@@ -23,7 +23,7 @@ export default function Profile() {
   }
 
   const handleLogout = () => {
-    window.location.href = '/api/auth/logout';
+    window.location.href = '/api/logout';
   };
 
   return (

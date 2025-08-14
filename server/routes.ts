@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import passport from "passport";
 import { storage } from "./storage";
 import { registerSchema, loginSchema, type RegisterRequest, type LoginRequest } from "@shared/schema";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./localAuth";
 import { insertBookingSchema } from "@shared/schema";
 import { sendBookingReminder } from "./emailService";
 
@@ -115,19 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      let user;
-      
-      // Handle different auth types
-      if (req.user.authProvider === 'local') {
-        // For local auth, user object is the actual user record
-        user = req.user;
-      } else {
-        // For Replit auth, get user ID from claims
-        const userId = req.user.claims?.sub;
-        if (userId) {
-          user = await storage.getUser(userId);
-        }
-      }
+      const user = req.user;
       
       console.log("User found:", user ? "Yes" : "No", user?.email);
       
@@ -136,7 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Return user without sensitive information
-      const { passwordHash, ...safeUser } = user;
+      const { passwordHash, authProvider, ...safeUser } = user;
       res.json(safeUser);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -169,14 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Bookings routes
   app.get('/api/bookings', isAuthenticated, async (req: any, res) => {
     try {
-      let userId;
-      
-      // Handle different auth types
-      if (req.user.authProvider === 'local') {
-        userId = req.user.id;
-      } else {
-        userId = req.user.claims?.sub;
-      }
+      const userId = req.user.id;
       
       if (!userId) {
         return res.status(400).json({ message: "User ID not found" });
@@ -210,14 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/bookings', isAuthenticated, async (req: any, res) => {
     try {
-      let userId;
-      
-      // Handle different auth types
-      if (req.user.authProvider === 'local') {
-        userId = req.user.id;
-      } else {
-        userId = req.user.claims?.sub;
-      }
+      const userId = req.user.id;
       
       if (!userId) {
         return res.status(400).json({ message: "User ID not found" });
@@ -226,22 +200,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Creating booking for user:", userId);
       console.log("Request body:", req.body);
       
-      // Ensure the user exists in the database
-      let user = await storage.getUser(userId);
-      if (!user && req.user.claims) {
-        // Only create user for Replit auth (local auth users already exist)
-        console.log("User not found, creating user record");
-        const claims = req.user.claims;
-        await storage.upsertUser({
-          id: claims.sub,
-          email: claims.email,
-          firstName: claims.first_name,
-          lastName: claims.last_name,
-          profileImageUrl: claims.profile_image_url,
-        });
-        user = await storage.getUser(userId);
-        console.log("User created:", user);
-      }
+      // User already exists since they're authenticated via local auth
+      const user = req.user;
       
       const bookingData = insertBookingSchema.parse({
         ...req.body,
@@ -273,13 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      
-      let userId;
-      if (req.user.authProvider === 'local') {
-        userId = req.user.id;
-      } else {
-        userId = req.user.claims?.sub;
-      }
+      const userId = req.user.id;
       
       if (!userId) {
         return res.status(400).json({ message: "User ID not found" });

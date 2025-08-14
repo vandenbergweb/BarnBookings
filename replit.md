@@ -4,7 +4,8 @@ This is a React-based web application for "The Barn MI", a professional baseball
 
 # User Preferences
 
-Preferred communication style: Simple, everyday language.
+- **Preferred communication style**: Simple, everyday language
+- **Authentication**: Local email/password only (no Replit OAuth integration required)
 
 # System Architecture
 
@@ -26,22 +27,21 @@ Preferred communication style: Simple, everyday language.
 - **Build System**: ESBuild for production bundling
 
 ## Authentication System
-- **Dual Authentication**: Both local email/password and Replit OpenID Connect
-- **Local Auth**: Email/password registration with bcrypt password hashing
-- **Replit Auth**: OpenID Connect integration for Replit users
+- **Local Authentication**: Email/password registration and login only
+- **Password Security**: bcrypt hashing with 12 salt rounds
 - **Session Storage**: PostgreSQL-backed sessions using connect-pg-simple
-- **Authorization**: Route-level protection with middleware supporting both auth types
-- **User Management**: Automatic user creation/updates for both authentication methods
+- **Authorization**: Route-level protection with passport middleware
+- **User Management**: Local user creation with proper validation
 
 ## Database Architecture
 - **Database**: PostgreSQL with Neon serverless
 - **Schema Management**: Drizzle Kit for migrations
 - **Core Tables**:
-  - Users (supports both local and Replit auth, includes password hashing, Stripe integration)
+  - Users (local authentication with password hashing, Stripe integration)
   - Spaces (facility rental areas)
   - Bundles (team package offerings)
   - Bookings (reservations with payment tracking)
-  - Sessions (authentication sessions for both auth types)
+  - Sessions (authentication sessions)
 
 ## Payment Processing
 - **Provider**: Stripe with React Stripe.js integration

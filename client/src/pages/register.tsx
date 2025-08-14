@@ -198,26 +198,7 @@ export default function Register() {
               </Button>
             </div>
 
-            <div className="mt-4 text-center">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-barn-gray/20" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-barn-gray">Or continue with</span>
-                </div>
-              </div>
-              
-              <Button 
-                variant="outline" 
-                onClick={() => window.location.href = '/api/login'}
-                className="w-full mt-4 text-barn-navy border-barn-navy"
-                data-testid="button-replit-auth"
-              >
-                <i className="fas fa-code mr-2"></i>
-                Sign up with Replit
-              </Button>
-            </div>
+
           </CardContent>
         </Card>
       </main>

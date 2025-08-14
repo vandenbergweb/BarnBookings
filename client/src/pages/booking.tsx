@@ -26,8 +26,13 @@ export default function BookingPage() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
-  const [selectedSpaceId, setSelectedSpaceId] = useState<string>("");
-  const [selectedBundleId, setSelectedBundleId] = useState<string>("");
+  // Get URL parameters for pre-selection
+  const urlParams = new URLSearchParams(window.location.search);
+  const preSelectedSpaceId = urlParams.get('spaceId') || "";
+  const preSelectedBundleId = urlParams.get('bundleId') || "";
+
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string>(preSelectedSpaceId);
+  const [selectedBundleId, setSelectedBundleId] = useState<string>(preSelectedBundleId);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [duration, setDuration] = useState<number>(1);
@@ -46,6 +51,20 @@ export default function BookingPage() {
       return;
     }
   }, [isAuthenticated, isLoading, toast]);
+
+  // Scroll to top when page loads and ensure pre-selected items are handled
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    
+    // If a bundle is pre-selected, clear any space selection
+    if (preSelectedBundleId && selectedSpaceId) {
+      setSelectedSpaceId("");
+    }
+    // If a space is pre-selected, clear any bundle selection
+    if (preSelectedSpaceId && selectedBundleId) {
+      setSelectedBundleId("");
+    }
+  }, [preSelectedSpaceId, preSelectedBundleId, selectedSpaceId, selectedBundleId]);
 
   const { data: spaces } = useQuery<Space[]>({
     queryKey: ["/api/spaces"],

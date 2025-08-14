@@ -6,7 +6,7 @@ import { storage } from "./storage";
 import { registerSchema, loginSchema, type RegisterRequest, type LoginRequest } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./localAuth";
 import { insertBookingSchema } from "@shared/schema";
-import { sendBookingReminder } from "./emailService";
+import { sendBookingConfirmation, sendBookingReminder } from "./email";
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-07-30.basil",
@@ -314,6 +314,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Payment intent error:", error);
       res.status(500).json({ message: "Error creating payment intent: " + error.message });
+    }
+  });
+
+  // Stripe webhook for payment completion
+  app.post("/api/stripe/webhook", async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(503).json({ message: "Stripe not configured" });
+      }
+
+      const event = req.body;
+      
+      // Handle the event
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          const paymentIntent = event.data.object;
+          const bookingId = paymentIntent.metadata?.bookingId;
+          
+          if (bookingId) {
+            console.log(`Payment succeeded for booking ${bookingId}`);
+            
+            // Update booking status to confirmed
+            await storage.updateBookingStatus(bookingId, 'confirmed');
+            
+            // Send confirmation email
+            const booking = await storage.getBooking(bookingId);
+            if (booking) {
+              const user = await storage.getUser(booking.userId);
+              if (user?.email) {
+                let spaceName = 'Unknown Space';
+                if (booking.spaceId) {
+                  const space = await storage.getSpace(booking.spaceId);
+                  spaceName = space?.name || 'Unknown Space';
+                } else if (booking.bundleId) {
+                  const bundle = await storage.getBundle(booking.bundleId);
+                  spaceName = bundle?.name || 'Unknown Bundle';
+                }
+
+                const emailSent = await sendBookingConfirmation({
+                  to: user.email,
+                  userName: user.firstName || 'Valued Customer',
+                  spaceName,
+                  startTime: booking.startTime,
+                  endTime: booking.endTime,
+                  totalAmount: booking.totalAmount,
+                  bookingId: booking.id,
+                });
+
+                if (emailSent) {
+                  console.log(`Confirmation email sent to ${user.email} for booking ${bookingId}`);
+                } else {
+                  console.error(`Failed to send confirmation email for booking ${bookingId}`);
+                }
+              }
+            }
+          }
+          break;
+        
+        case 'payment_intent.payment_failed':
+          const failedPaymentIntent = event.data.object;
+          const failedBookingId = failedPaymentIntent.metadata?.bookingId;
+          
+          if (failedBookingId) {
+            console.log(`Payment failed for booking ${failedBookingId}`);
+            await storage.updateBookingStatus(failedBookingId, 'payment_failed');
+          }
+          break;
+
+        default:
+          console.log(`Unhandled Stripe event type: ${event.type}`);
+      }
+
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error('Stripe webhook error:', error);
+      res.status(400).json({ message: 'Webhook handler failed' });
+    }
+  });
+
+  // Manual confirmation email trigger (for payment success page)
+  app.post('/api/send-confirmation-email', isAuthenticated, async (req: any, res) => {
+    try {
+      const { bookingId } = req.body;
+      const userId = req.user.id;
+
+      if (!bookingId) {
+        return res.status(400).json({ message: 'Booking ID is required' });
+      }
+
+      const booking = await storage.getBooking(bookingId);
+      if (!booking || booking.userId !== userId) {
+        return res.status(404).json({ message: 'Booking not found' });
+      }
+
+      const user = await storage.getUser(booking.userId);
+      if (!user?.email) {
+        return res.status(400).json({ message: 'User email not found' });
+      }
+
+      let spaceName = 'Unknown Space';
+      if (booking.spaceId) {
+        const space = await storage.getSpace(booking.spaceId);
+        spaceName = space?.name || 'Unknown Space';
+      } else if (booking.bundleId) {
+        const bundle = await storage.getBundle(booking.bundleId);
+        spaceName = bundle?.name || 'Unknown Bundle';
+      }
+
+      const emailSent = await sendBookingConfirmation({
+        to: user.email,
+        userName: user.firstName || 'Valued Customer',
+        spaceName,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        totalAmount: booking.totalAmount,
+        bookingId: booking.id,
+      });
+
+      if (emailSent) {
+        res.json({ message: 'Confirmation email sent successfully' });
+      } else {
+        res.status(500).json({ message: 'Failed to send confirmation email' });
+      }
+    } catch (error) {
+      console.error('Error sending confirmation email:', error);
+      res.status(500).json({ message: 'Failed to send confirmation email' });
     }
   });
 

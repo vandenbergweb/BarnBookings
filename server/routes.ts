@@ -189,6 +189,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get individual booking by ID
+  app.get('/api/bookings/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      
+      if (!userId) {
+        return res.status(400).json({ message: "User ID not found" });
+      }
+      
+      const booking = await storage.getBooking(id);
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      // Ensure the booking belongs to the authenticated user
+      if (booking.userId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(booking);
+    } catch (error) {
+      console.error("Error fetching booking:", error);
+      res.status(500).json({ message: "Failed to fetch booking" });
+    }
+  });
+
   app.post('/api/bookings', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;

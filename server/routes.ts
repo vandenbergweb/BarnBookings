@@ -5,6 +5,7 @@ import passport from "passport";
 import { storage } from "./storage";
 import { registerSchema, loginSchema, type RegisterRequest, type LoginRequest } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./localAuth";
+import { isAdmin } from "./adminAuth";
 import { insertBookingSchema } from "@shared/schema";
 import { sendBookingConfirmation, sendBookingReminder } from "./email";
 
@@ -440,6 +441,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error sending confirmation email:', error);
       res.status(500).json({ message: 'Failed to send confirmation email' });
+    }
+  });
+
+  // Admin booking creation (cash payments or comps)
+  app.post('/api/admin/bookings', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { customerEmail, paymentMethod = 'cash', ...bookingData } = req.body;
+      
+      // Find or create customer user
+      let customer = await storage.getUserByEmail(customerEmail);
+      if (!customer) {
+        // Create a basic customer account
+        customer = await storage.createUser({
+          email: customerEmail,
+          firstName: bookingData.customerName || 'Customer',
+          lastName: '',
+          passwordHash: null, // No password for admin-created accounts
+          role: 'customer'
+        });
+      }
+
+      if (!customer) {
+        return res.status(500).json({ message: "Failed to create or find customer" });
+      }
+
+      const booking = await storage.createBooking({
+        ...insertBookingSchema.parse({
+          ...bookingData,
+          userId: customer.id,
+          paymentMethod
+        })
+      });
+
+      console.log(`Admin booking created: ${booking.id} for ${customerEmail} (${paymentMethod} payment)`);
+
+      // Send confirmation email if customer has email
+      if (customer?.email) {
+        let spaceName = 'Unknown Space';
+        if (booking.spaceId) {
+          const space = await storage.getSpace(booking.spaceId);
+          spaceName = space?.name || 'Unknown Space';
+        } else if (booking.bundleId) {
+          const bundle = await storage.getBundle(booking.bundleId);
+          spaceName = bundle?.name || 'Unknown Bundle';
+        }
+
+        await sendBookingConfirmation({
+          to: customer.email,
+          userName: customer.firstName || 'Valued Customer',
+          spaceName,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          totalAmount: booking.totalAmount,
+          bookingId: booking.id,
+        });
+      }
+
+      res.json(booking);
+    } catch (error) {
+      console.error("Error creating admin booking:", error);
+      res.status(500).json({ message: "Failed to create admin booking" });
+    }
+  });
+
+  // Get all bookings (admin only)
+  app.get('/api/admin/bookings', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const bookings = await storage.getAllBookings();
+      res.json(bookings);
+    } catch (error) {
+      console.error("Error fetching all bookings:", error);
+      res.status(500).json({ message: "Failed to fetch bookings" });
     }
   });
 

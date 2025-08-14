@@ -26,6 +26,13 @@ export interface IStorage {
     authProvider: 'local';
     isEmailVerified: boolean;
   }): Promise<User>;
+  createUser(userData: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    passwordHash: string | null;
+    role?: string;
+  }): Promise<User>;
   updateStripeCustomerId(userId: string, customerId: string): Promise<User>;
   
   // Space operations
@@ -39,6 +46,7 @@ export interface IStorage {
   // Booking operations
   createBooking(booking: InsertBooking): Promise<Booking>;
   getUserBookings(userId: string): Promise<Booking[]>;
+  getAllBookings(): Promise<Booking[]>;
   getBooking(id: string): Promise<Booking | undefined>;
   updateBookingStatus(id: string, status: string): Promise<Booking>;
   updateBookingPayment(id: string, paymentIntentId: string): Promise<Booking>;
@@ -89,6 +97,25 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async createUser(userData: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    passwordHash: string | null;
+    role?: string;
+  }): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values({
+        ...userData,
+        role: userData.role || 'customer',
+        authProvider: 'local',
+        isEmailVerified: false,
+      })
+      .returning();
+    return user;
+  }
+
   async updateStripeCustomerId(userId: string, customerId: string): Promise<User> {
     const [user] = await db
       .update(users)
@@ -129,6 +156,13 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(bookings)
       .where(eq(bookings.userId, userId))
+      .orderBy(desc(bookings.startTime));
+  }
+
+  async getAllBookings(): Promise<Booking[]> {
+    return await db
+      .select()
+      .from(bookings)
       .orderBy(desc(bookings.startTime));
   }
 

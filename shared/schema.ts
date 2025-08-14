@@ -36,6 +36,7 @@ export const users = pgTable("users", {
   passwordHash: varchar("password_hash"), // Only set for local accounts
   isEmailVerified: boolean("is_email_verified").default(false),
   authProvider: varchar("auth_provider").default("local"), // "local" or "replit"
+  role: varchar("role").default("customer"), // "customer" or "admin"
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -71,6 +72,7 @@ export const bookings = pgTable("bookings", {
   endTime: timestamp("end_time").notNull(),
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
   status: varchar("status").notNull().default("confirmed"), // confirmed, cancelled, completed
+  paymentMethod: varchar("payment_method").default("stripe"), // "stripe" or "cash" or "other"
   stripePaymentIntentId: varchar("stripe_payment_intent_id"),
   reminderSent: boolean("reminder_sent").default(false),
   createdAt: timestamp("created_at").defaultNow(),

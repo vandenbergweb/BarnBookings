@@ -1,11 +1,15 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NavigationProps {
   currentPage: "home" | "book" | "bookings" | "profile";
 }
 
 export default function Navigation({ currentPage }: NavigationProps) {
+  const { user } = useAuth();
+  const isAdmin = (user as any)?.role === 'admin';
+  
   const getButtonClass = (page: string) => {
     return currentPage === page 
       ? "text-barn-red" 
@@ -14,7 +18,7 @@ export default function Navigation({ currentPage }: NavigationProps) {
 
   return (
     <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 max-w-sm w-full bg-white border-t border-gray-200 z-30">
-      <div className="flex justify-around py-2">
+      <div className={`flex ${isAdmin ? 'justify-between' : 'justify-around'} py-2 px-2`}>
         <Link href="/">
           <Button 
             variant="ghost" 
@@ -48,9 +52,22 @@ export default function Navigation({ currentPage }: NavigationProps) {
           </Button>
         </Link>
         
+        {isAdmin && (
+          <Link href="/admin">
+            <Button 
+              variant="ghost" 
+              className={`flex flex-col items-center py-2 px-2 ${getButtonClass("admin")}`}
+              data-testid="nav-admin"
+            >
+              <i className="fas fa-user-shield text-lg mb-1"></i>
+              <span className="text-xs font-medium">Admin</span>
+            </Button>
+          </Link>
+        )}
+        
         <Button 
           variant="ghost" 
-          className={`flex flex-col items-center py-2 px-4 ${getButtonClass("profile")}`}
+          className={`flex flex-col items-center py-2 px-2 ${getButtonClass("profile")}`}
           onClick={() => window.location.href = '/api/logout'}
           data-testid="nav-profile"
         >

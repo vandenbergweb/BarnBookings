@@ -298,7 +298,10 @@ export default function AdminPage() {
                           <div>
                             <p className="text-sm font-medium text-barn-navy">Customer</p>
                             <p className="text-sm text-barn-gray" data-testid={`text-customer-${booking.id}`}>
-                              {booking.userId}
+                              {(booking as any).customerName || 'Unknown'}
+                            </p>
+                            <p className="text-xs text-barn-gray/70">
+                              {(booking as any).customerEmail}
                             </p>
                           </div>
                           <div>

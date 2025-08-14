@@ -508,7 +508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all bookings (admin only)
   app.get('/api/admin/bookings', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const bookings = await storage.getAllBookings();
+      const bookings = await storage.getAllBookingsWithCustomerInfo();
       res.json(bookings);
     } catch (error) {
       console.error("Error fetching all bookings:", error);

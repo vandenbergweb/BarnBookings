@@ -47,6 +47,7 @@ export interface IStorage {
   createBooking(booking: InsertBooking): Promise<Booking>;
   getUserBookings(userId: string): Promise<Booking[]>;
   getAllBookings(): Promise<Booking[]>;
+  getAllBookingsWithCustomerInfo(): Promise<(Booking & { customerName: string; customerEmail: string })[]>;
   getBooking(id: string): Promise<Booking | undefined>;
   updateBookingStatus(id: string, status: string): Promise<Booking>;
   updateBookingPayment(id: string, paymentIntentId: string): Promise<Booking>;
@@ -164,6 +165,35 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(bookings)
       .orderBy(desc(bookings.startTime));
+  }
+
+  async getAllBookingsWithCustomerInfo(): Promise<(Booking & { customerName: string; customerEmail: string })[]> {
+    const result = await db
+      .select({
+        id: bookings.id,
+        userId: bookings.userId,
+        spaceId: bookings.spaceId,
+        bundleId: bookings.bundleId,
+        startTime: bookings.startTime,
+        endTime: bookings.endTime,
+        totalAmount: bookings.totalAmount,
+        status: bookings.status,
+        paymentMethod: bookings.paymentMethod,
+        stripePaymentIntentId: bookings.stripePaymentIntentId,
+        reminderSent: bookings.reminderSent,
+        createdAt: bookings.createdAt,
+        updatedAt: bookings.updatedAt,
+        customerName: users.firstName,
+        customerEmail: users.email
+      })
+      .from(bookings)
+      .innerJoin(users, eq(bookings.userId, users.id))
+      .orderBy(desc(bookings.startTime));
+    
+    return result.map(row => ({
+      ...row,
+      customerName: row.customerName || 'Unknown',
+    }));
   }
 
   async getBooking(id: string): Promise<Booking | undefined> {

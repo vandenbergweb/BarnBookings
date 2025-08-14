@@ -34,10 +34,7 @@ export default function Register() {
       const result = await response.json();
       
       if (response.ok) {
-        toast({
-          title: "Account Created!",
-          description: "Welcome to The Barn MI. You're now logged in.",
-        });
+        // Redirect immediately without showing toast to avoid pop-up
         setLocation("/");
       } else {
         throw new Error(result.message || "Registration failed");

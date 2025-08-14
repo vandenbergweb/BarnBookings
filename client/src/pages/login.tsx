@@ -31,10 +31,7 @@ export default function Login() {
       const result = await response.json();
       
       if (response.ok) {
-        toast({
-          title: "Welcome Back!",
-          description: "You're now logged in.",
-        });
+        // Redirect immediately without showing toast to avoid pop-up
         setLocation("/");
       } else {
         throw new Error(result.message || "Login failed");

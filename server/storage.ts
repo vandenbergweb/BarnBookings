@@ -148,6 +148,54 @@ export class DatabaseStorage implements IStorage {
 
   // Booking operations
   async createBooking(booking: InsertBooking): Promise<Booking> {
+    // Check for conflicting bookings before creating
+    const conflictingBookings = await this.getBookingsForTimeRange(
+      booking.startTime,
+      booking.endTime
+    );
+
+    // Get bundle information if needed for conflict checking
+    let newBookingBundle: Bundle | undefined;
+    if (booking.bundleId) {
+      newBookingBundle = await this.getBundle(booking.bundleId);
+    }
+
+    // Filter conflicts based on space/bundle overlap
+    const hasConflict = await Promise.all(
+      conflictingBookings.map(async existingBooking => {
+        // Direct space conflict
+        if (booking.spaceId && existingBooking.spaceId === booking.spaceId) {
+          return true;
+        }
+
+        // Direct bundle conflict
+        if (booking.bundleId && existingBooking.bundleId === booking.bundleId) {
+          return true;
+        }
+
+        // Bundle-space conflicts: check if new booking's bundle includes an already booked space
+        if (booking.bundleId && existingBooking.spaceId && newBookingBundle) {
+          if (newBookingBundle.spaceIds.includes(existingBooking.spaceId)) {
+            return true;
+          }
+        }
+
+        // Space-bundle conflicts: check if new booking's space is included in an already booked bundle
+        if (booking.spaceId && existingBooking.bundleId) {
+          const existingBundle = await this.getBundle(existingBooking.bundleId);
+          if (existingBundle && existingBundle.spaceIds.includes(booking.spaceId)) {
+            return true;
+          }
+        }
+
+        return false;
+      })
+    );
+
+    if (hasConflict.some(conflict => conflict)) {
+      throw new Error('Time slot is already booked for the selected space or bundle');
+    }
+
     const [newBooking] = await db.insert(bookings).values(booking).returning();
     return newBooking;
   }
@@ -220,14 +268,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBookingsForTimeRange(startTime: Date, endTime: Date): Promise<Booking[]> {
+    // Check for any overlapping bookings: booking_start < query_end AND booking_end > query_start
     return await db
       .select()
       .from(bookings)
       .where(
         and(
-          gte(bookings.startTime, startTime),
-          lte(bookings.endTime, endTime),
-          eq(bookings.status, "confirmed")
+          eq(bookings.status, "confirmed"),
+          // Booking starts before our query ends AND booking ends after our query starts
+          // This catches all overlapping scenarios
+          lte(bookings.startTime, endTime),
+          gte(bookings.endTime, startTime)
         )
       );
   }

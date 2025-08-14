@@ -27,11 +27,12 @@ This is a React-based web application for "The Barn MI", a professional baseball
 - **Build System**: ESBuild for production bundling
 
 ## Authentication System
-- **Local Authentication**: Email/password registration and login only
+- **Local Authentication**: Email/password registration and login only (no Replit OAuth)
 - **Password Security**: bcrypt hashing with 12 salt rounds
 - **Session Storage**: PostgreSQL-backed sessions using connect-pg-simple
 - **Authorization**: Route-level protection with passport middleware
 - **User Management**: Local user creation with proper validation
+- **Important**: All authentication redirects point to /login (not /api/login) to prevent Replit OAuth interference
 
 ## Database Architecture
 - **Database**: PostgreSQL with Neon serverless

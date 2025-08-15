@@ -266,39 +266,48 @@ export default function BookingPage() {
           <Card>
             <CardContent className="p-4">
               <Label className="text-barn-navy font-semibold mb-3 block">Select Time</Label>
-              <div className="grid grid-cols-2 gap-3">
-                {timeSlots.map((time) => {
-                  const available = isTimeSlotAvailable(time);
-                  const timeFormatted = new Date(`2000-01-01T${time}:00`).toLocaleTimeString('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  });
-                  
-                  return (
-                    <Button
-                      key={time}
-                      variant={selectedTime === time ? "default" : "outline"}
-                      disabled={!available}
-                      onClick={() => setSelectedTime(time)}
-                      className={`${
-                        selectedTime === time 
-                          ? "bg-barn-navy text-white" 
-                          : available 
-                            ? "border-barn-navy text-barn-navy hover:bg-barn-navy hover:text-white" 
-                            : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      }`}
-                      data-testid={`button-time-${time}`}
-                    >
-                      {available ? timeFormatted : (
-                        <div>
-                          {timeFormatted}
-                          <div className="text-xs">Booked</div>
-                        </div>
-                      )}
-                    </Button>
-                  );
-                })}
-              </div>
+              {!availability ? (
+                <div className="p-8">
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin w-6 h-6 border-4 border-barn-navy border-t-transparent rounded-full" />
+                    <span className="ml-3 text-gray-600">Checking availability...</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {timeSlots.map((time) => {
+                    const available = isTimeSlotAvailable(time);
+                    const timeFormatted = new Date(`2000-01-01T${time}:00`).toLocaleTimeString('en-US', {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    });
+                    
+                    return (
+                      <Button
+                        key={time}
+                        variant={selectedTime === time ? "default" : "outline"}
+                        disabled={!available}
+                        onClick={() => setSelectedTime(time)}
+                        className={`${
+                          selectedTime === time 
+                            ? "bg-barn-navy text-white" 
+                            : available 
+                              ? "border-barn-navy text-barn-navy hover:bg-barn-navy hover:text-white" 
+                              : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        }`}
+                        data-testid={`button-time-${time}`}
+                      >
+                        {available ? timeFormatted : (
+                          <div>
+                            {timeFormatted}
+                            <div className="text-xs">Booked</div>
+                          </div>
+                        )}
+                      </Button>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
 

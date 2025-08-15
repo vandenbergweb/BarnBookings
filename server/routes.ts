@@ -183,6 +183,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // More specific route first - date-based availability check
+  app.get('/api/bookings/availability/:date', async (req, res) => {
+    try {
+      const { date } = req.params;
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({ message: "Valid date in YYYY-MM-DD format is required" });
+      }
+      
+      console.log(`Getting availability for date: ${date}`);
+      
+      // Get all bookings for the entire day
+      const startOfDay = new Date(date + 'T00:00:00.000Z');
+      const endOfDay = new Date(date + 'T23:59:59.999Z');
+      
+      const bookings = await storage.getBookingsForTimeRange(startOfDay, endOfDay);
+      console.log(`Found ${bookings.length} bookings for ${date}`);
+      res.json(bookings);
+    } catch (error) {
+      console.error("Error checking availability for date:", error);
+      res.status(500).json({ message: "Failed to check availability" });
+    }
+  });
+
+  // General availability route with query parameters
   app.get('/api/bookings/availability', async (req, res) => {
     try {
       const { startTime, endTime } = req.query;

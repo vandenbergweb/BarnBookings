@@ -88,7 +88,9 @@ export default function BookingPage() {
       return response.json();
     },
     onSuccess: (booking) => {
+      // Invalidate both bookings and availability queries to refresh UI
       queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings/availability"] });
       setLocation(`/checkout?bookingId=${booking.id}`);
     },
     onError: (error) => {

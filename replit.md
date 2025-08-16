@@ -32,7 +32,9 @@ This is a React-based web application for "The Barn MI", a professional baseball
 - **Session Storage**: PostgreSQL-backed sessions using connect-pg-simple
 - **Authorization**: Route-level protection with passport middleware
 - **User Management**: Local user creation with proper validation
+- **Auto-Login**: Users are automatically logged in after successful registration
 - **Important**: All authentication redirects point to /login (not /api/login) to prevent Replit OAuth interference
+- **UX Flow**: Registration shows success message, auto-logs in user, and redirects to home page
 
 ## Database Architecture
 - **Database**: PostgreSQL with Neon serverless

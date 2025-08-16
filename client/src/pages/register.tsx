@@ -34,8 +34,16 @@ export default function Register() {
       const result = await response.json();
       
       if (response.ok) {
-        // Redirect immediately without showing toast to avoid pop-up
-        setLocation("/");
+        // Show success message and auto-login user
+        toast({
+          title: "Account Created Successfully!",
+          description: "Welcome to The Barn MI. You are now logged in.",
+        });
+        
+        // Force a full page reload to ensure auth state is refreshed
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1500);
       } else {
         throw new Error(result.message || "Registration failed");
       }
@@ -46,7 +54,6 @@ export default function Register() {
         description: error.message || "Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };

@@ -35,6 +35,8 @@ This is a React-based web application for "The Barn MI", a professional baseball
 - **Auto-Login**: Users are automatically logged in after successful registration
 - **Important**: All authentication redirects point to /login (not /api/login) to prevent Replit OAuth interference
 - **UX Flow**: Registration shows success message, auto-logs in user, and redirects to home page
+- **Production Admin**: Admin user auto-created on server startup (admin@thebarnmi.com / admin123)
+- **Database Persistence**: Production databases persist between deployments, admin user is permanent
 
 ## Database Architecture
 - **Database**: PostgreSQL with Neon serverless

@@ -31,10 +31,12 @@ export async function initializeAdminUser() {
       .insert(users)
       .values({
         email: adminEmail,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         firstName: 'Admin',
         lastName: 'User',
-        role: 'admin'
+        role: 'admin',
+        isEmailVerified: true,
+        authProvider: 'local'
       })
       .returning();
 

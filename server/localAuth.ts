@@ -13,24 +13,30 @@ export function setupLocalAuth() {
     passwordField: 'password'
   }, async (email, password, done) => {
     try {
+      console.log(`User found: ${!!await storage.getUserByEmail(email) ? 'Yes' : 'No'} ${email}`);
       const user = await storage.getUserByEmail(email);
       
       if (!user) {
+        console.log(`Login failed: No user found for ${email}`);
         return done(null, false, { message: 'No account found with this email address.' });
       }
       
       if (!user.passwordHash) {
+        console.log(`Login failed: No password hash for ${email}`);
         return done(null, false, { message: 'This account uses a different sign-in method.' });
       }
       
       const isValidPassword = await bcrypt.compare(password, user.passwordHash);
       
       if (!isValidPassword) {
+        console.log(`Login failed: Invalid password for ${email}`);
         return done(null, false, { message: 'Incorrect password.' });
       }
       
+      console.log(`Login successful for ${email}`);
       return done(null, user);
     } catch (error) {
+      console.error(`Login error for ${email}:`, error);
       return done(error);
     }
   }));
@@ -97,6 +103,7 @@ export function getSession() {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: sessionTtl,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
   });
 }

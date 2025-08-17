@@ -85,7 +85,7 @@ export default function AdminSimplePage() {
             </CardHeader>
             <CardContent>
               <p className="text-barn-gray mb-4">Create cash/comp bookings and view all customer bookings.</p>
-              <Link href="/admin">
+              <Link href="/admin/bookings">
                 <button className="w-full bg-barn-navy text-white py-2 rounded hover:bg-barn-navy/90">
                   Manage Bookings
                 </button>
@@ -99,9 +99,9 @@ export default function AdminSimplePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2 text-xs">
-                <p className="text-barn-gray">Email: {user.email}</p>
+                <p className="text-barn-gray">Email: {(user as any).email}</p>
                 <p className="text-barn-gray">Role: {(user as any).role || 'undefined'}</p>
-                <p className="text-barn-gray">ID: {user.id}</p>
+                <p className="text-barn-gray">ID: {(user as any).id}</p>
                 <p className="text-barn-gray">First Name: {(user as any).firstName}</p>
                 <p className="text-barn-gray">Admin Check: {(user as any)?.role === 'admin' ? '✓ YES' : '✗ NO'}</p>
                 <details className="mt-2">

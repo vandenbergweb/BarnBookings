@@ -1,9 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 
 export function useAuth() {
-  const { data: user, isLoading, error } = useQuery({
+  const { data: user, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/auth/user"],
-    retry: false,
+    retry: (failureCount, error: any) => {
+      // Retry once for potential session timing issues
+      if (failureCount < 1 && error?.status !== 401) {
+        console.log('Retrying auth check due to network error');
+        return true;
+      }
+      return false;
+    },
+    retryDelay: 1000,
     staleTime: 0, // Always fresh check
     gcTime: 0, // Don't cache
   });
@@ -21,6 +29,7 @@ export function useAuth() {
     user,
     isLoading,
     isAuthenticated: !!user,
-    error
+    error,
+    refetch
   };
 }

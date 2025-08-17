@@ -38,6 +38,12 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Set NODE_ENV if not already set
+  if (!process.env.NODE_ENV) {
+    process.env.NODE_ENV = 'development';
+    console.log('Set NODE_ENV to development');
+  }
+  
   // Initialize admin user in production
   await initializeAdminUser();
   

@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import passport from "passport";
 import { storage } from "./storage";
 import { registerSchema, loginSchema, type RegisterRequest, type LoginRequest } from "@shared/schema";
-import { setupAuth, isAuthenticated } from "./localAuth";
+import { setupAuth, isAuthenticated, validateSession } from "./localAuth";
 import { isAdmin } from "./adminAuth";
 import { insertBookingSchema } from "@shared/schema";
 import { sendBookingConfirmation, sendBookingReminder } from "./email";
@@ -16,6 +16,9 @@ const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SEC
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
+  
+  // Add session validation middleware for debugging
+  app.use(validateSession);
 
   // Initialize spaces and bundles data
   await initializeData();
@@ -91,6 +94,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error('Login session error:', loginErr);
             return res.status(500).json({ message: 'Login failed' });
           }
+          
+          // Verify session was created properly
+          console.log('Post-login session check:', {
+            sessionID: req.sessionID,
+            isAuthenticated: req.isAuthenticated(),
+            hasUser: !!req.user,
+            passportUser: (req.session as any)?.passport?.user
+          });
           
           console.log('Login successful for user:', user.email);
           res.json({ 

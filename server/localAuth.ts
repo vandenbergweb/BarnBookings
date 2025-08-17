@@ -88,22 +88,36 @@ export async function comparePassword(password: string, hash: string): Promise<b
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const pgStore = connectPg(session);
+  
+  console.log('Creating session store with DATABASE_URL:', !!process.env.DATABASE_URL);
+  
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
+    createTableIfMissing: true, // Auto-create sessions table if missing
     ttl: sessionTtl,
     tableName: "sessions",
   });
+  const isProduction = process.env.NODE_ENV === "production";
+  
+  console.log('Session configuration:', {
+    isProduction,
+    hasSecret: !!process.env.SESSION_SECRET,
+    cookieSecure: false, // Always false for Replit
+    cookieSameSite: 'lax',
+    maxAge: sessionTtl
+  });
+  
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET || 'fallback-dev-secret',
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
+    name: 'barn.sid',
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Always false - Replit handles HTTPS at proxy level
       maxAge: sessionTtl,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: "lax", // Always lax for better compatibility
     },
   });
 }

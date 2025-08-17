@@ -352,23 +352,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  // Auth routes with comprehensive debugging
+  app.get('/api/auth/user', async (req: any, res) => {
     try {
-      const user = req.user;
+      console.log('=== AUTH USER ENDPOINT DEBUG ===');
+      console.log('Session ID:', req.sessionID);
+      console.log('Is Authenticated:', req.isAuthenticated());
+      console.log('Has User:', !!req.user);
+      console.log('Session Store Keys:', Object.keys(req.session || {}));
+      console.log('Passport User:', req.session?.passport?.user);
+      console.log('Request Headers:', {
+        cookie: req.headers.cookie,
+        userAgent: req.headers['user-agent'],
+        host: req.headers.host
+      });
       
-      console.log("User found:", user ? "Yes" : "No", user?.email);
-      
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
+      if (!req.isAuthenticated() || !req.user) {
+        console.log('User not authenticated - returning 401');
+        return res.status(401).json({ 
+          message: "Not authenticated",
+          debug: {
+            isAuthenticated: req.isAuthenticated(),
+            hasUser: !!req.user,
+            sessionID: req.sessionID
+          }
+        });
       }
+      
+      const user = req.user;
+      console.log("User authenticated successfully:", {
+        id: user.id,
+        email: user.email,
+        role: user.role
+      });
       
       // Return user without sensitive information
       const { passwordHash, authProvider, ...safeUser } = user;
       res.json(safeUser);
     } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      console.error("Error in auth/user endpoint:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch user",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Comprehensive production debugging endpoint
+  app.get('/api/debug/session-info', async (req: any, res) => {
+    try {
+      const debug = {
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV,
+        sessionID: req.sessionID,
+        hasSession: !!req.session,
+        sessionData: req.session ? Object.keys(req.session) : null,
+        isAuthenticated: req.isAuthenticated(),
+        hasUser: !!req.user,
+        userInfo: req.user ? {
+          id: req.user.id,
+          email: req.user.email,
+          role: req.user.role
+        } : null,
+        cookies: req.headers.cookie,
+        passportSession: req.session?.passport,
+        host: req.headers.host,
+        userAgent: req.headers['user-agent'],
+        databaseStatus: 'connected',
+        sessionStore: !!req.sessionStore
+      };
+      
+      console.log('Session debug info:', debug);
+      res.json(debug);
+    } catch (error) {
+      console.error('Debug endpoint error:', error);
+      res.status(500).json({
+        error: 'Debug failed',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 

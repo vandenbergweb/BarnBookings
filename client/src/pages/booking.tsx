@@ -37,20 +37,29 @@ export default function BookingPage() {
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [duration, setDuration] = useState<number>(1);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated with debugging
   useEffect(() => {
+    console.log('Booking page auth check:', {
+      isLoading,
+      isAuthenticated,
+      timestamp: new Date().toISOString()
+    });
+    
     if (!isLoading && !isAuthenticated) {
+      console.log('User not authenticated, redirecting to login');
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        title: "Authentication Required",
+        description: "Please log in to make a booking",
         variant: "destructive",
       });
+      
+      // Use router navigation instead of window.location
       setTimeout(() => {
-        window.location.href = "/login";
-      }, 500);
+        setLocation("/login");
+      }, 1000);
       return;
     }
-  }, [isAuthenticated, isLoading, toast]);
+  }, [isAuthenticated, isLoading, toast, setLocation]);
 
   // Scroll to top when page loads and ensure pre-selected items are handled
   useEffect(() => {

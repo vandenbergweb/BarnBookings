@@ -155,11 +155,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Create admin user using raw database insert
-      const bcrypt = require('bcryptjs');
-      const hashedPassword = await bcrypt.hash(adminPassword, 12);
+      const bcrypt = await import('bcryptjs');
+      const hashedPassword = await bcrypt.default.hash(adminPassword, 12);
       
-      const { db } = require('./db');
-      const { users } = require('../shared/schema');
+      const { db } = await import('./db.js');
+      const { users } = await import('../shared/schema.js');
       
       const [adminUser] = await db
         .insert(users)
@@ -220,40 +220,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Promote user to admin (requires existing admin or first-time setup)
   app.post('/api/promote-to-admin', async (req, res) => {
     try {
+      console.log('=== PROMOTE TO ADMIN REQUEST ===');
+      console.log('Request body:', req.body);
+      console.log('User authenticated:', req.isAuthenticated());
+      console.log('Current user:', req.user ? {
+        id: (req.user as any).id,
+        email: (req.user as any).email,
+        role: (req.user as any).role
+      } : 'No user');
+      
       const { email } = req.body;
       
       if (!email) {
+        console.log('Error: No email provided');
         return res.status(400).json({ message: 'Email is required' });
       }
       
+      console.log('Looking up user with email:', email);
+      
       // Check if user exists
       const user = await storage.getUserByEmail(email);
+      console.log('User lookup result:', user ? {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        authProvider: user.authProvider
+      } : 'User not found');
+      
       if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        console.log('Error: User not found for email:', email);
+        return res.status(404).json({ 
+          message: 'User not found. Please make sure you have created an account with this email address first.' 
+        });
       }
       
       // Check if user is already admin
       if (user.role === 'admin') {
+        console.log('Error: User is already admin');
         return res.status(400).json({ message: 'User is already an admin' });
       }
       
       // Check if there are any existing admins
-      const { db } = require('./db');
-      const { users } = require('../shared/schema');
-      const { eq } = require('drizzle-orm');
+      const { db } = await import('./db.js');
+      const { users } = await import('../shared/schema.js');
+      const { eq } = await import('drizzle-orm');
       
+      console.log('Checking for existing admins...');
       const existingAdmins = await db
         .select()
         .from(users)
         .where(eq(users.role, 'admin'));
       
-      // If no admins exist, allow promotion (first-time setup)
-      // If admins exist, require authentication
-      if (existingAdmins.length > 0) {
-        if (!req.isAuthenticated() || (req.user as any)?.role !== 'admin') {
-          return res.status(403).json({ message: 'Admin privileges required' });
-        }
+      console.log('Existing admins count:', existingAdmins.length);
+      console.log('Existing admins:', existingAdmins.map(admin => ({
+        email: admin.email,
+        authProvider: admin.authProvider
+      })));
+      
+      // Check if the only admin is the environment-created admin (admin@thebarnmi.com)
+      const hasEnvironmentAdminOnly = existingAdmins.length === 1 && 
+        existingAdmins[0].email === 'admin@thebarnmi.com' &&
+        existingAdmins[0].authProvider === 'local';
+      
+      console.log('hasEnvironmentAdminOnly:', hasEnvironmentAdminOnly);
+      console.log('First admin email:', existingAdmins[0]?.email);
+      console.log('First admin authProvider:', existingAdmins[0]?.authProvider);
+      
+      // Allow promotion if:
+      // 1. No admins exist, OR
+      // 2. Only the environment admin exists (for first real user setup), OR  
+      // 3. User is authenticated as an admin
+      const shouldAllowPromotion = existingAdmins.length === 0 || hasEnvironmentAdminOnly || 
+        (req.isAuthenticated() && (req.user as any)?.role === 'admin');
+      
+      if (!shouldAllowPromotion) {
+        console.log('Error: Admin privileges required - conditions not met');
+        console.log('- No admins exist:', existingAdmins.length === 0);
+        console.log('- Only env admin:', hasEnvironmentAdminOnly);
+        console.log('- Is authenticated:', req.isAuthenticated());
+        console.log('- User role:', (req.user as any)?.role);
+        return res.status(403).json({ 
+          message: 'Admin privileges required. Another admin must promote you.' 
+        });
       }
+      
+      console.log('Promotion allowed - proceeding...');
+      
+      console.log('Promoting user to admin...');
       
       // Promote user to admin
       const [updatedUser] = await db
@@ -262,7 +315,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(users.email, email))
         .returning();
       
-      console.log('User promoted to admin:', email);
+      console.log('User promoted to admin successfully:', {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role
+      });
+      
       res.json({ 
         message: 'User promoted to admin successfully',
         user: {
@@ -272,16 +330,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error) {
-      console.error('Failed to promote user to admin:', error);
-      res.status(500).json({ message: 'Failed to promote user to admin' });
+      console.error('Failed to promote user to admin - detailed error:', error);
+      res.status(500).json({ 
+        message: 'Failed to promote user to admin',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        details: process.env.NODE_ENV === 'development' ? error : undefined
+      });
     }
   });
 
   // List all admin users (admin only)
   app.get('/api/admin/users', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const { db } = require('./db');
-      const { users } = require('../shared/schema');
+      const { db } = await import('./db.js');
+      const { users } = await import('../shared/schema.js');
       
       const allUsers = await db.select({
         id: users.id,
@@ -327,9 +389,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Remove admin privileges
-      const { db } = require('./db');
-      const { users } = require('../shared/schema');
-      const { eq } = require('drizzle-orm');
+      const { db } = await import('./db.js');
+      const { users } = await import('../shared/schema.js');
+      const { eq } = await import('drizzle-orm');
       
       const [updatedUser] = await db
         .update(users)

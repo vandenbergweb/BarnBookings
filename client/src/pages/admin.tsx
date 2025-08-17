@@ -31,7 +31,26 @@ export default function AdminPage() {
     paymentMethod: 'cash'
   });
 
-  // Check if user is admin
+  // Fetch data - always call hooks at the top level
+  const { data: spaces } = useQuery<Space[]>({
+    queryKey: ["/api/spaces"],
+    retry: false,
+    enabled: !isLoading && user && (user as any).role === 'admin'
+  });
+
+  const { data: bundles } = useQuery<Bundle[]>({
+    queryKey: ["/api/bundles"],
+    retry: false,
+    enabled: !isLoading && user && (user as any).role === 'admin'
+  });
+
+  const { data: allBookings } = useQuery<Booking[]>({
+    queryKey: ["/api/admin/bookings"],
+    retry: false,
+    enabled: !isLoading && user && (user as any).role === 'admin'
+  });
+
+  // Check if user is admin - render conditionally after all hooks
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -52,22 +71,6 @@ export default function AdminPage() {
       </div>
     );
   }
-
-  // Fetch data
-  const { data: spaces } = useQuery<Space[]>({
-    queryKey: ["/api/spaces"],
-    retry: false,
-  });
-
-  const { data: bundles } = useQuery<Bundle[]>({
-    queryKey: ["/api/bundles"],
-    retry: false,
-  });
-
-  const { data: allBookings } = useQuery<Booking[]>({
-    queryKey: ["/api/admin/bookings"],
-    retry: false,
-  });
 
   // Create booking mutation
   const createBookingMutation = useMutation({

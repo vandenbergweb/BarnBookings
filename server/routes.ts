@@ -217,6 +217,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Promote user to admin (requires existing admin or first-time setup)
+  app.post('/api/promote-to-admin', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+      }
+      
+      // Check if user exists
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Check if user is already admin
+      if (user.role === 'admin') {
+        return res.status(400).json({ message: 'User is already an admin' });
+      }
+      
+      // Check if there are any existing admins
+      const { db } = require('./db');
+      const { users } = require('../shared/schema');
+      const { eq } = require('drizzle-orm');
+      
+      const existingAdmins = await db
+        .select()
+        .from(users)
+        .where(eq(users.role, 'admin'));
+      
+      // If no admins exist, allow promotion (first-time setup)
+      // If admins exist, require authentication
+      if (existingAdmins.length > 0) {
+        if (!req.isAuthenticated() || (req.user as any)?.role !== 'admin') {
+          return res.status(403).json({ message: 'Admin privileges required' });
+        }
+      }
+      
+      // Promote user to admin
+      const [updatedUser] = await db
+        .update(users)
+        .set({ role: 'admin' })
+        .where(eq(users.email, email))
+        .returning();
+      
+      console.log('User promoted to admin:', email);
+      res.json({ 
+        message: 'User promoted to admin successfully',
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          role: updatedUser.role
+        }
+      });
+    } catch (error) {
+      console.error('Failed to promote user to admin:', error);
+      res.status(500).json({ message: 'Failed to promote user to admin' });
+    }
+  });
+
+  // List all admin users (admin only)
+  app.get('/api/admin/users', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { db } = require('./db');
+      const { users } = require('../shared/schema');
+      
+      const allUsers = await db.select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+        isEmailVerified: users.isEmailVerified,
+        authProvider: users.authProvider,
+        createdAt: users.createdAt
+      }).from(users);
+      
+      res.json(allUsers);
+    } catch (error) {
+      console.error('Failed to get users:', error);
+      res.status(500).json({ message: 'Failed to retrieve users' });
+    }
+  });
+
+  // Remove admin privileges (admin only, cannot remove own admin)
+  app.post('/api/remove-admin', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { email } = req.body;
+      const currentUser = req.user as any;
+      
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+      }
+      
+      // Prevent self-demotion
+      if (currentUser.email === email) {
+        return res.status(400).json({ message: 'Cannot remove your own admin privileges' });
+      }
+      
+      // Check if user exists
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      if (user.role !== 'admin') {
+        return res.status(400).json({ message: 'User is not an admin' });
+      }
+      
+      // Remove admin privileges
+      const { db } = require('./db');
+      const { users } = require('../shared/schema');
+      const { eq } = require('drizzle-orm');
+      
+      const [updatedUser] = await db
+        .update(users)
+        .set({ role: 'customer' })
+        .where(eq(users.email, email))
+        .returning();
+      
+      console.log('Admin privileges removed from:', email);
+      res.json({ 
+        message: 'Admin privileges removed successfully',
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          role: updatedUser.role
+        }
+      });
+    } catch (error) {
+      console.error('Failed to remove admin privileges:', error);
+      res.status(500).json({ message: 'Failed to remove admin privileges' });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {

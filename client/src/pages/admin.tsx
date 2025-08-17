@@ -11,6 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import type { Space, Bundle, Booking } from "@shared/schema";
 import baseballLogo from "@assets/baseball_1754937097015.png";
+import { Link } from "wouter";
+import { Users, Settings, Calendar } from "lucide-react";
 
 export default function AdminPage() {
   const { user, isLoading } = useAuth();
@@ -141,6 +143,41 @@ export default function AdminPage() {
       </header>
 
       <main className="max-w-4xl mx-auto p-4">
+        {/* Quick Navigation */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Link href="/admin/users">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardContent className="p-4 flex items-center space-x-3">
+                <Users className="h-8 w-8 text-barn-navy" />
+                <div>
+                  <h3 className="font-semibold">User Management</h3>
+                  <p className="text-sm text-gray-600">Promote users to admin</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+          
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardContent className="p-4 flex items-center space-x-3">
+              <Calendar className="h-8 w-8 text-barn-navy" />
+              <div>
+                <h3 className="font-semibold">Booking Management</h3>
+                <p className="text-sm text-gray-600">Create and view bookings</p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardContent className="p-4 flex items-center space-x-3">
+              <Settings className="h-8 w-8 text-barn-navy" />
+              <div>
+                <h3 className="font-semibold">Settings</h3>
+                <p className="text-sm text-gray-600">Configure spaces & bundles</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         <Tabs defaultValue="create-booking" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="create-booking" data-testid="tab-create-booking">Create Booking</TabsTrigger>

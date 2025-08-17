@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
-import { Users, ArrowLeft } from "lucide-react";
+import { Users, ArrowLeft, Calendar } from "lucide-react";
 import baseballLogo from "@assets/baseball_1754937097015.png";
 
 export default function AdminSimplePage() {
@@ -71,6 +71,23 @@ export default function AdminSimplePage() {
               <Link href="/admin/users">
                 <button className="w-full bg-barn-navy text-white py-2 rounded hover:bg-barn-navy/90">
                   Manage Users
+                </button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Calendar className="w-5 h-5" />
+                <span>Booking Management</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-barn-gray mb-4">Create cash/comp bookings and view all customer bookings.</p>
+              <Link href="/admin">
+                <button className="w-full bg-barn-navy text-white py-2 rounded hover:bg-barn-navy/90">
+                  Manage Bookings
                 </button>
               </Link>
             </CardContent>

@@ -134,6 +134,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Emergency admin creation endpoint (only works if no admin exists)
+  app.post('/api/create-admin-emergency', async (req, res) => {
+    try {
+      console.log('Emergency admin creation attempt');
+      
+      // Check if admin user already exists
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@thebarnmi.com';
+      const existingAdmin = await storage.getUserByEmail(adminEmail);
+      
+      if (existingAdmin) {
+        return res.status(400).json({ message: 'Admin user already exists' });
+      }
+      
+      // Get password from environment
+      const adminPassword = process.env.ADMIN_PASSWORD;
+      
+      if (!adminPassword) {
+        return res.status(400).json({ message: 'No admin password provided in environment' });
+      }
+      
+      // Create admin user using raw database insert
+      const bcrypt = require('bcryptjs');
+      const hashedPassword = await bcrypt.hash(adminPassword, 12);
+      
+      const { db } = require('./db');
+      const { users } = require('../shared/schema');
+      
+      const [adminUser] = await db
+        .insert(users)
+        .values({
+          email: adminEmail,
+          passwordHash: hashedPassword,
+          firstName: 'Admin',
+          lastName: 'User',
+          authProvider: 'local',
+          isEmailVerified: true,
+          role: 'admin'
+        })
+        .returning();
+      
+      console.log('Emergency admin created:', adminUser.email);
+      res.json({ message: 'Admin user created successfully', email: adminUser.email });
+    } catch (error) {
+      console.error('Emergency admin creation failed:', error);
+      res.status(500).json({ message: 'Failed to create admin user' });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {

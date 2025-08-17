@@ -14,6 +14,7 @@ import PaymentSuccess from "@/pages/payment-success";
 import Dashboard from "@/pages/dashboard";
 import AdminPage from "@/pages/admin";
 import AdminUsers from "@/pages/admin-users";
+import AdminSetup from "@/pages/admin-setup";
 import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/admin" component={AdminPage} />
       <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/setup" component={AdminSetup} />
       <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>

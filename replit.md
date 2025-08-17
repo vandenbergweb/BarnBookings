@@ -29,15 +29,15 @@ This is a React-based web application for "The Barn MI", a professional baseball
 ## Authentication System
 - **Local Authentication**: Email/password registration and login only (no Replit OAuth)
 - **Password Security**: bcrypt hashing with 12 salt rounds
-- **Session Storage**: PostgreSQL-backed sessions using connect-pg-simple
+- **Session Storage**: PostgreSQL-backed sessions using connect-pg-simple with optimized production settings
 - **Authorization**: Route-level protection with passport middleware
 - **User Management**: Local user creation with proper validation
 - **Auto-Login**: Users are automatically logged in after successful registration
-- **Important**: All authentication redirects point to /login (not /api/login) to prevent Replit OAuth interference
-- **UX Flow**: Registration shows success message, auto-logs in user, and redirects to home page
-- **Production Admin**: Admin user creation via environment variables (ADMIN_EMAIL/ADMIN_PASSWORD) for security
-- **Database Persistence**: Production databases persist between deployments, admin user is permanent
-- **Security**: Hardcoded credentials removed from codebase per security audit
+- **Session Configuration**: sameSite: 'lax' and secure: false for Replit production compatibility
+- **Role-Based Admin**: Any user can be promoted to admin through API or web interface
+- **First Admin Setup**: When no admins exist, promotion endpoint allows first admin creation
+- **Admin Management**: Web interface at /admin/users for promoting/demoting users
+- **Production Ready**: Fixed authentication issues between development and production environments
 
 ## Database Architecture
 - **Database**: PostgreSQL with Neon serverless

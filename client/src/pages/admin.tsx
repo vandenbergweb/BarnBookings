@@ -14,8 +14,7 @@ import baseballLogo from "@assets/baseball_1754937097015.png";
 import { Link } from "wouter";
 import { Users, Settings, Calendar } from "lucide-react";
 
-export default function AdminPage() {
-  const { user, isLoading } = useAuth();
+function AdminContent() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -31,46 +30,21 @@ export default function AdminPage() {
     paymentMethod: 'cash'
   });
 
-  // Fetch data - always call hooks at the top level
+  // Fetch data
   const { data: spaces } = useQuery<Space[]>({
     queryKey: ["/api/spaces"],
     retry: false,
-    enabled: !isLoading && user && (user as any).role === 'admin'
   });
 
   const { data: bundles } = useQuery<Bundle[]>({
     queryKey: ["/api/bundles"],
     retry: false,
-    enabled: !isLoading && user && (user as any).role === 'admin'
   });
 
   const { data: allBookings } = useQuery<Booking[]>({
     queryKey: ["/api/admin/bookings"],
     retry: false,
-    enabled: !isLoading && user && (user as any).role === 'admin'
   });
-
-  // Check if user is admin - render conditionally after all hooks
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-barn-navy border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
-  if (!user || (user as any).role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-bold text-barn-navy mb-2">Access Denied</h2>
-            <p className="text-barn-gray">You need admin privileges to access this page.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   // Create booking mutation
   const createBookingMutation = useMutation({
@@ -229,7 +203,7 @@ export default function AdminPage() {
                           <SelectValue placeholder="Select space" />
                         </SelectTrigger>
                         <SelectContent>
-                          {spaces?.map((space) => (
+                          {spaces?.map((space: any) => (
                             <SelectItem key={space.id} value={space.id}>
                               {space.name} - ${space.hourlyRate}/hr
                             </SelectItem>
@@ -248,7 +222,7 @@ export default function AdminPage() {
                           <SelectValue placeholder="Select bundle" />
                         </SelectTrigger>
                         <SelectContent>
-                          {bundles?.map((bundle) => (
+                          {bundles?.map((bundle: any) => (
                             <SelectItem key={bundle.id} value={bundle.id}>
                               {bundle.name} - ${bundle.hourlyRate}/hr
                             </SelectItem>
@@ -330,11 +304,11 @@ export default function AdminPage() {
           <TabsContent value="view-bookings" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>All Bookings ({allBookings?.length || 0})</CardTitle>
+                <CardTitle>All Bookings ({(allBookings as any)?.length || 0})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {allBookings?.map((booking) => {
+                  {(allBookings as any)?.map((booking: any) => {
                     const startDate = new Date(booking.startTime);
                     const endDate = new Date(booking.endTime);
                     
@@ -379,7 +353,7 @@ export default function AdminPage() {
                     );
                   })}
 
-                  {!allBookings?.length && (
+                  {!(allBookings as any)?.length && (
                     <div className="text-center py-8 text-barn-gray">
                       No bookings found
                     </div>
@@ -392,4 +366,32 @@ export default function AdminPage() {
       </main>
     </div>
   );
+}
+
+export default function AdminPage() {
+  const { user, isLoading } = useAuth();
+
+  // Check if user is admin
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-barn-navy border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!user || (user as any).role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="p-6 text-center">
+            <h2 className="text-xl font-bold text-barn-navy mb-2">Access Denied</h2>
+            <p className="text-barn-gray">You need admin privileges to access this page.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return <AdminContent />;
 }

@@ -12,7 +12,7 @@ import BookingPage from "@/pages/booking";
 import Checkout from "@/pages/checkout";
 import PaymentSuccess from "@/pages/payment-success";
 import Dashboard from "@/pages/dashboard";
-import AdminPage from "@/pages/admin";
+import AdminPage from "@/pages/admin-simple";
 import AdminUsers from "@/pages/admin-users";
 import AdminSetup from "@/pages/admin-setup";
 import Profile from "@/pages/profile";

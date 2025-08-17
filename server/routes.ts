@@ -65,15 +65,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/auth/login', async (req, res) => {
     try {
+      console.log('Login attempt with body:', { email: req.body.email, hasPassword: !!req.body.password });
       const validatedData = loginSchema.parse(req.body);
       
       passport.authenticate('local-login', (err: any, user: any, info: any) => {
+        console.log('Passport authenticate result:', { 
+          hasError: !!err, 
+          hasUser: !!user, 
+          infoMessage: info?.message 
+        });
+        
         if (err) {
           console.error('Login error:', err);
           return res.status(500).json({ message: 'Internal server error' });
         }
         
         if (!user) {
+          console.log('Login failed:', info?.message || 'Invalid credentials');
           return res.status(401).json({ message: info?.message || 'Invalid credentials' });
         }
         
@@ -83,6 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.status(500).json({ message: 'Login failed' });
           }
           
+          console.log('Login successful for user:', user.email);
           res.json({ 
             message: 'Login successful',
             user: {

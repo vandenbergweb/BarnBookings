@@ -78,14 +78,34 @@ export default function AdminSimplePage() {
 
           <Card>
             <CardHeader>
+              <CardTitle>Current User Debug</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-xs">
+                <p className="text-barn-gray">Email: {user.email}</p>
+                <p className="text-barn-gray">Role: {(user as any).role || 'undefined'}</p>
+                <p className="text-barn-gray">ID: {user.id}</p>
+                <p className="text-barn-gray">First Name: {(user as any).firstName}</p>
+                <p className="text-barn-gray">Admin Check: {(user as any)?.role === 'admin' ? '✓ YES' : '✗ NO'}</p>
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-barn-navy">Full User Object</summary>
+                  <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
+                    {JSON.stringify(user, null, 2)}
+                  </pre>
+                </details>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Multiple Admin System</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <p className="text-sm text-barn-gray">Current admin: {user.email}</p>
-                <p className="text-sm text-barn-gray">Role: {(user as any).role}</p>
                 <p className="text-sm text-green-600">✓ Multiple admin users supported</p>
                 <p className="text-sm text-green-600">✓ Role-based promotion system active</p>
+                <p className="text-sm text-barn-gray">Known admins: admin@thebarnmi.com, rebeccavdb@live.com</p>
               </div>
             </CardContent>
           </Card>

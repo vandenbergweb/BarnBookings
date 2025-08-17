@@ -34,10 +34,12 @@ This is a React-based web application for "The Barn MI", a professional baseball
 - **User Management**: Local user creation with proper validation
 - **Auto-Login**: Users are automatically logged in after successful registration
 - **Session Configuration**: sameSite: 'lax' and secure: false for Replit production compatibility
-- **Role-Based Admin**: Any user can be promoted to admin through API or web interface
-- **First Admin Setup**: When no admins exist, promotion endpoint allows first admin creation
+- **Multiple Admin System**: Role-based admin promotion system supporting unlimited admin users
+- **First Admin Setup**: When only environment admin exists, first real user can be promoted without authentication
 - **Admin Management**: Web interface at /admin/users for promoting/demoting users
+- **Current Admins**: admin@thebarnmi.com (environment), rebeccavdb@live.com (promoted user)
 - **Production Ready**: Fixed authentication issues between development and production environments
+- **Debug Interface**: Added admin debug page at /admin for troubleshooting user roles and permissions
 
 ## Database Architecture
 - **Database**: PostgreSQL with Neon serverless

@@ -182,6 +182,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug endpoint to check admin user status in production
+  app.get('/api/debug-admin-status', async (req, res) => {
+    try {
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@thebarnmi.com';
+      const adminUser = await storage.getUserByEmail(adminEmail);
+      
+      const status = {
+        environment: process.env.NODE_ENV,
+        hasAdminPassword: !!process.env.ADMIN_PASSWORD,
+        hasSessionSecret: !!process.env.SESSION_SECRET,
+        hasDatabaseUrl: !!process.env.DATABASE_URL,
+        adminEmail,
+        adminExists: !!adminUser,
+        adminDetails: adminUser ? {
+          id: adminUser.id,
+          email: adminUser.email,
+          role: adminUser.role,
+          hasPasswordHash: !!adminUser.passwordHash,
+          authProvider: adminUser.authProvider,
+          isEmailVerified: adminUser.isEmailVerified,
+          passwordHashLength: adminUser.passwordHash ? adminUser.passwordHash.length : 0
+        } : null
+      };
+      
+      console.log('Debug admin status check:', status);
+      res.json(status);
+    } catch (error) {
+      console.error('Debug admin status failed:', error);
+      res.status(500).json({ 
+        error: 'Failed to check admin status',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {

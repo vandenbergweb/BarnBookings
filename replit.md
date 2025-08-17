@@ -39,6 +39,8 @@ This is a React-based web application for "The Barn MI", a professional baseball
 - **Admin Management**: Web interface at /admin/users for promoting/demoting users
 - **Current Admins**: admin@thebarnmi.com (environment), rebeccavdb@live.com (promoted user)
 - **Production Ready**: Fixed authentication issues between development and production environments
+- **Admin Credentials**: admin@thebarnmi.com / yellow123 (password updated in database directly)
+- **Environment Setup**: Production requires ADMIN_PASSWORD=yellow123 environment variable for proper initialization
 - **Debug Interface**: Added admin debug page at /admin for troubleshooting user roles and permissions
 
 ## Database Architecture

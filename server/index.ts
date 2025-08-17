@@ -44,6 +44,13 @@ app.use((req, res, next) => {
     console.log('Set NODE_ENV to development');
   }
   
+  console.log('Current environment:', {
+    NODE_ENV: process.env.NODE_ENV,
+    hasSessionSecret: !!process.env.SESSION_SECRET,
+    hasAdminPassword: !!process.env.ADMIN_PASSWORD,
+    port: process.env.PORT || '5000'
+  });
+  
   // Initialize admin user in production
   await initializeAdminUser();
   

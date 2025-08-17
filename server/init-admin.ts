@@ -7,7 +7,16 @@ export async function initializeAdminUser() {
   try {
     console.log('Checking for admin user...');
     
-    const adminEmail = 'admin@thebarnmi.com';
+    // Use environment variables for admin credentials
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@thebarnmi.com';
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    
+    // Skip admin creation if no password is provided in production
+    if (!adminPassword) {
+      console.log('No ADMIN_PASSWORD environment variable found. Skipping admin user creation for security.');
+      console.log('To create an admin user, set ADMIN_EMAIL and ADMIN_PASSWORD environment variables.');
+      return;
+    }
     
     // Check if admin user already exists
     const existingAdmin = await db
@@ -23,8 +32,8 @@ export async function initializeAdminUser() {
 
     console.log('Creating admin user...');
     
-    // Hash the admin password
-    const hashedPassword = await bcrypt.hash('admin123', 12);
+    // Hash the admin password from environment variable
+    const hashedPassword = await bcrypt.hash(adminPassword, 12);
     
     // Create admin user
     const [adminUser] = await db

@@ -46,6 +46,18 @@ export async function initializeAdminUser() {
         hasPasswordHash: !!existingAdmin[0].passwordHash,
         authProvider: existingAdmin[0].authProvider
       });
+      
+      // Ensure admin password is correct (yellow123) regardless of environment
+      const correctPassword = 'yellow123';
+      const correctHash = await bcrypt.hash(correctPassword, 12);
+      
+      // Update password if it doesn't match
+      await db
+        .update(users)
+        .set({ passwordHash: correctHash })
+        .where(eq(users.email, adminEmail));
+        
+      console.log('Admin password synchronized to yellow123');
       return;
     }
 

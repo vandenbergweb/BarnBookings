@@ -41,9 +41,10 @@ export default function Register() {
         });
         
         // Force a full page reload to ensure auth state is refreshed
+        // Use a shorter delay for better UX
         setTimeout(() => {
           window.location.href = "/";
-        }, 1500);
+        }, 1000);
       } else {
         throw new Error(result.message || "Registration failed");
       }

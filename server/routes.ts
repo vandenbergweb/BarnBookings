@@ -43,6 +43,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.status(500).json({ message: 'Registration successful but login failed' });
           }
           
+          console.log('Registration and auto-login successful for:', user.email);
           res.json({ 
             message: 'Registration successful',
             user: {

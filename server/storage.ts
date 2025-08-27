@@ -12,7 +12,7 @@ import {
   type InsertBooking,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { eq, and, gte, lte, desc, asc } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -135,7 +135,7 @@ export class DatabaseStorage implements IStorage {
 
   // Space operations
   async getSpaces(): Promise<Space[]> {
-    return await db.select().from(spaces).where(eq(spaces.isActive, true));
+    return await db.select().from(spaces).where(eq(spaces.isActive, true)).orderBy(asc(spaces.id));
   }
 
   async getSpace(id: string): Promise<Space | undefined> {

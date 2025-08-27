@@ -61,6 +61,18 @@ export default function BookingPage() {
     }
   }, [isAuthenticated, isLoading, toast, setLocation]);
 
+  // Adjust duration when selected time changes to prevent going past 9PM
+  useEffect(() => {
+    if (selectedTime) {
+      const [timeHours] = selectedTime.split(':').map(Number);
+      const maxDuration = 21 - timeHours; // 9PM = 21:00
+      
+      if (duration > maxDuration) {
+        setDuration(Math.max(1, maxDuration));
+      }
+    }
+  }, [selectedTime, duration]);
+
   // Scroll to top when page loads and ensure pre-selected items are handled
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -378,22 +390,42 @@ export default function BookingPage() {
             <CardContent className="p-4">
               <Label className="text-barn-navy font-semibold mb-3 block">Duration</Label>
               <div className="flex space-x-3">
-                {[1, 2, 3].map((hours) => (
-                  <Button
-                    key={hours}
-                    variant={duration === hours ? "default" : "outline"}
-                    onClick={() => setDuration(hours)}
-                    className={
-                      duration === hours 
-                        ? "bg-barn-green text-white" 
-                        : "border-barn-green text-barn-green hover:bg-barn-green hover:text-white"
-                    }
-                    data-testid={`button-duration-${hours}`}
-                  >
-                    {hours} Hour{hours > 1 ? 's' : ''}
-                  </Button>
-                ))}
+                {[1, 2, 3].map((hours) => {
+                  // Check if this duration would extend past 9PM
+                  const isDurationValid = () => {
+                    if (!selectedTime) return true;
+                    const [timeHours] = selectedTime.split(':').map(Number);
+                    const endHour = timeHours + hours;
+                    return endHour <= 21; // 9PM = 21:00
+                  };
+
+                  const isValid = isDurationValid();
+                  
+                  return (
+                    <Button
+                      key={hours}
+                      variant={duration === hours ? "default" : "outline"}
+                      disabled={!isValid}
+                      onClick={() => setDuration(hours)}
+                      className={
+                        duration === hours 
+                          ? "bg-barn-green text-white" 
+                          : isValid
+                            ? "border-barn-green text-barn-green hover:bg-barn-green hover:text-white"
+                            : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      }
+                      data-testid={`button-duration-${hours}`}
+                    >
+                      {hours} Hour{hours > 1 ? 's' : ''}
+                    </Button>
+                  );
+                })}
               </div>
+              {selectedTime && (
+                <p className="text-xs text-barn-gray mt-2">
+                  Bookings must end by 9:00 PM EST
+                </p>
+              )}
             </CardContent>
           </Card>
 

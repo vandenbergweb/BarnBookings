@@ -360,7 +360,9 @@ export default function BookingPage() {
                         {available ? timeFormatted : (
                           <div>
                             {timeFormatted}
-                            <div className="text-xs">Booked</div>
+                            <div className="text-xs">
+                              {time === '21:00' ? 'Closed' : 'Booked'}
+                            </div>
                           </div>
                         )}
                       </Button>

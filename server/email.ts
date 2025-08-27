@@ -99,7 +99,8 @@ export async function sendBookingConfirmation(data: BookingConfirmationData): Pr
           <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin-bottom: 25px;">
             <h4 style="color: #92400e; margin: 0 0 10px 0; font-size: 16px;">Important Reminders</h4>
             <ul style="color: #92400e; margin: 0; padding-left: 20px;">
-              <li>Please arrive <strong>10 minutes early</strong> for check-in</li>
+              <li>Please arrive <strong>on time</strong>. No gum, sunflower seeds or collared drinks</li>
+              <li>Only use the space that you rented or you will be billed for the other space that was used</li>
               <li>Bring your own water bottle and towel</li>
               <li>Athletic attire and proper footwear required</li>
               <li>Contact us if you need to reschedule or cancel</li>
@@ -110,7 +111,7 @@ export async function sendBookingConfirmation(data: BookingConfirmationData): Pr
             <p style="margin: 0 0 15px 0; color: #666;">Questions about your booking?</p>
             <p style="margin: 0; font-weight: 600; color: #1e3a5f;">
               📧 info@thebarnmi.com<br>
-              📞 (555) 123-BARN<br>
+              📞 (517) 204-4747<br>
               📍 6090 W River Rd, Weidman MI 48893
             </p>
           </div>
@@ -137,14 +138,15 @@ BOOKING DETAILS:
 - Total Paid: $${totalAmount}
 
 IMPORTANT REMINDERS:
-- Please arrive 10 minutes early for check-in
+- Please arrive on time. No gum, sunflower seeds or collared drinks
+- Only use the space that you rented or you will be billed for the other space that was used
 - Bring your own water bottle and towel
 - Athletic attire and proper footwear required
 - Contact us if you need to reschedule or cancel
 
 Questions? Contact us at:
 Email: info@thebarnmi.com
-Phone: (555) 123-BARN
+Phone: (517) 204-4747
 Address: 6090 W River Rd, Weidman MI 48893
 
 Booking ID: #${bookingId}
@@ -234,7 +236,8 @@ export async function sendBookingReminder(data: BookingReminderData): Promise<bo
           <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin-bottom: 25px;">
             <h4 style="color: #92400e; margin: 0 0 10px 0; font-size: 16px;">Don't Forget:</h4>
             <ul style="color: #92400e; margin: 0; padding-left: 20px;">
-              <li>Arrive <strong>10 minutes early</strong> for check-in</li>
+              <li>Please arrive <strong>on time</strong>. No gum, sunflower seeds or collared drinks</li>
+              <li>Only use the space that you rented or you will be billed for the other space that was used</li>
               <li>Bring water bottle and towel</li>
               <li>Wear athletic attire and proper footwear</li>
               <li>Contact us if you need to cancel or reschedule</li>
@@ -245,7 +248,7 @@ export async function sendBookingReminder(data: BookingReminderData): Promise<bo
             <p style="margin: 0 0 15px 0; color: #666;">Questions or need to reschedule?</p>
             <p style="margin: 0; font-weight: 600; color: #1e3a5f;">
               📧 info@thebarnmi.com<br>
-              📞 (555) 123-BARN<br>
+              📞 (517) 204-4747<br>
               📍 6090 W River Rd, Weidman MI 48893
             </p>
           </div>
@@ -270,14 +273,15 @@ SESSION DETAILS:
 - Time: ${formatTime(startTime)} - ${formatTime(endTime)}
 
 DON'T FORGET:
-- Arrive 10 minutes early for check-in
+- Please arrive on time. No gum, sunflower seeds or collared drinks
+- Only use the space that you rented or you will be billed for the other space that was used
 - Bring water bottle and towel
 - Wear athletic attire and proper footwear
 - Contact us if you need to cancel or reschedule
 
 Questions or need to reschedule?
 Email: info@thebarnmi.com
-Phone: (555) 123-BARN
+Phone: (517) 204-4747
 Address: 6090 W River Rd, Weidman MI 48893
 
 See you tomorrow!

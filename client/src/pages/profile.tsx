@@ -123,7 +123,7 @@ export default function Profile() {
                 </div>
                 <div className="flex items-center">
                   <i className="fas fa-phone mr-3 w-4 text-barn-red"></i>
-                  <span>(555) 123-BARN</span>
+                  <span>(517) 204-4747</span>
                 </div>
                 <div className="flex items-center">
                   <i className="fas fa-clock mr-3 w-4 text-barn-red"></i>

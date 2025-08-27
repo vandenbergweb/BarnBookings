@@ -981,15 +981,15 @@ async function initializeData() {
           name: "Space B",
           description: "12' x 40' Batting Cage",
           dimensions: "12' x 40'",
-          equipment: "Includes batting tee, balls and L-screen",
-          hourlyRate: "25.00",
+          equipment: "Includes batting tee, balls, L-screen and Blast Technology",
+          hourlyRate: "30.00",
         },
         {
           id: "C",
           name: "Space C", 
           description: "12' x 40' Batting Cage",
           dimensions: "12' x 40'",
-          equipment: "Includes batting tee, balls, L-screen, and Hack Attack Jr Pitching Machine",
+          equipment: "Includes batting tee, balls, L-screen, Hack Attack Jr Pitching Machine and Blast Technology",
           hourlyRate: "50.00",
         },
         {
@@ -1003,13 +1003,6 @@ async function initializeData() {
       ]);
 
       await db.insert(bundles).values([
-        {
-          id: "bundle1",
-          name: "Bundle Option 1",
-          description: "Space A Only - Perfect for team practices",
-          spaceIds: ["A"],
-          hourlyRate: "100.00",
-        },
         {
           id: "bundle2", 
           name: "Bundle Option 2",

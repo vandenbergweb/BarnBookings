@@ -46,39 +46,7 @@ export default function Dashboard() {
     retry: false,
   });
 
-  const cancelBookingMutation = useMutation({
-    mutationFn: async (bookingId: string) => {
-      const response = await apiRequest("PATCH", `/api/bookings/${bookingId}/status`, {
-        status: "cancelled"
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
-      toast({
-        title: "Booking Cancelled",
-        description: "Your booking has been cancelled successfully.",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Cancellation Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+
 
   if (isLoading || bookingsLoading) {
     return (
@@ -120,11 +88,7 @@ export default function Dashboard() {
     }
   };
 
-  const canCancelBooking = (booking: Booking) => {
-    const bookingTime = new Date(booking.startTime);
-    const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    return bookingTime > twentyFourHoursFromNow && booking.status === "confirmed";
-  };
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -191,27 +155,13 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      {canCancelBooking(booking) && (
-                        <div className="flex space-x-3 mt-3">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => cancelBookingMutation.mutate(booking.id)}
-                            disabled={cancelBookingMutation.isPending}
-                            className="text-barn-red border-barn-red hover:bg-barn-red hover:text-white"
-                            data-testid={`button-cancel-${booking.id}`}
-                          >
-                            <i className="fas fa-times mr-1"></i>
-                            {cancelBookingMutation.isPending ? "Cancelling..." : "Cancel"}
-                          </Button>
-                        </div>
-                      )}
+
                       
                       {/* Reminder Notice */}
                       <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mt-3">
                         <div className="flex items-center text-yellow-800 text-xs">
                           <i className="fas fa-bell mr-2"></i>
-                          <span>Reminder will be sent 24 hours before your booking</span>
+                          <span>Arrive on time. No gum, sunflower seeds or collared drinks. Only use the space that you rented or you will be billed for the other space that was used.</span>
                         </div>
                       </div>
                     </CardContent>

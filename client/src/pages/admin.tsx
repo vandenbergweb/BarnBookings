@@ -308,7 +308,7 @@ function AdminContent() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {(allBookings as any)?.map((booking: any) => {
+                  {(allBookings as any)?.sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())?.map((booking: any) => {
                     const startDate = new Date(booking.startTime);
                     const endDate = new Date(booking.endTime);
                     

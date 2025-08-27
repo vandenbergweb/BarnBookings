@@ -137,6 +137,43 @@ export default function BookingPage() {
     const endTime = new Date(startTime);
     endTime.setHours(hours + duration, minutes, 0, 0);
 
+    // Validate booking is not more than 4 months in the future
+    const now = new Date();
+    const fourMonthsFromNow = new Date(now);
+    fourMonthsFromNow.setMonth(now.getMonth() + 4);
+    
+    if (startTime > fourMonthsFromNow) {
+      toast({
+        title: "Booking Too Far in Future",
+        description: "Bookings can only be made up to 4 months in advance.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate same-day booking is at least 1 hour from now
+    const isToday = startTime.toDateString() === now.toDateString();
+    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+    
+    if (isToday && startTime < oneHourFromNow) {
+      toast({
+        title: "Same-Day Booking Restriction",
+        description: "Same-day bookings must be at least 1 hour from now.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate booking doesn't end after 9PM EST (21:00)
+    if (endTime.getHours() > 21 || (endTime.getHours() === 21 && endTime.getMinutes() > 0)) {
+      toast({
+        title: "Booking Hours Restriction",
+        description: "Bookings cannot extend past 9:00 PM EST.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const bookingData: BookingData = {
       spaceId: selectedSpaceId || undefined,
       bundleId: selectedBundleId || undefined,
@@ -149,8 +186,8 @@ export default function BookingPage() {
   };
 
   const timeSlots = [
-    "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", 
-    "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
+    "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", 
+    "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"
   ];
 
   const isTimeSlotAvailable = (time: string) => {
@@ -162,6 +199,20 @@ export default function BookingPage() {
     
     const slotEnd = new Date(slotStart);
     slotEnd.setHours(hours + duration, minutes, 0, 0);
+
+    // Don't show time slots that would extend past 9PM EST
+    if (slotEnd.getHours() > 21 || (slotEnd.getHours() === 21 && slotEnd.getMinutes() > 0)) {
+      return false;
+    }
+
+    // Validate same-day booking is at least 1 hour from now
+    const now = new Date();
+    const isToday = slotStart.toDateString() === now.toDateString();
+    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+    
+    if (isToday && slotStart < oneHourFromNow) {
+      return false;
+    }
 
     return !availability.some(booking => {
       const bookingStart = new Date(booking.startTime);

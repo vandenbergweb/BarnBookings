@@ -12,7 +12,7 @@ This is a React-based web application for "The Barn MI", a professional baseball
 - Updated facility rules: "Arrive on time. No gum, sunflower seeds or collared drinks. Only use the space that you rented or you will be billed for the other space that was used."
 - Changed admin booking display order to chronological (current to future)
 - All timezone handling set to EST
-- Prepared for cancellation policy and liability waiver integration at checkout
+- Integrated cancellation policy and liability waiver documents into checkout with digital signature requirement
 
 # User Preferences
 

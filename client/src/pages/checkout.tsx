@@ -20,8 +20,29 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
   const elements = useElements();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [step, setStep] = useState<'agreements' | 'payment'>('agreements');
+  const [signatureName, setSignatureName] = useState('');
+  const [agreementsAccepted, setAgreementsAccepted] = useState({
+    cancellation: false,
+    liability: false
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAgreementSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!agreementsAccepted.cancellation || !agreementsAccepted.liability || !signatureName.trim()) {
+      toast({
+        title: "Agreements Required",
+        description: "Please read and accept all agreements and provide your digital signature.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setStep('payment');
+  };
+
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!stripe || !elements) {
@@ -46,6 +67,120 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
       setLocation(`/payment-success?bookingId=${booking.id}`);
     }
   };
+
+  if (step === 'agreements') {
+    return (
+      <div className="space-y-6">
+        {/* Booking Summary */}
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="font-semibold text-barn-navy mb-3">Booking Details</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>{spaceName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>{new Date(booking.startTime).toLocaleDateString()}</span>
+                <span>
+                  {new Date(booking.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - 
+                  {new Date(booking.endTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                </span>
+              </div>
+              <div className="flex justify-between font-bold text-lg border-t border-barn-red pt-2 mt-3">
+                <span>Total</span>
+                <span data-testid="text-payment-total">${booking.totalAmount}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Agreements Form */}
+        <form onSubmit={handleAgreementSubmit}>
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="font-semibold text-barn-navy mb-4">Required Agreements</h3>
+              
+              {/* No Cancellation Policy */}
+              <div className="mb-6">
+                <h4 className="font-medium text-barn-navy mb-2">No Cancellation Policy</h4>
+                <div className="bg-gray-50 p-4 rounded-lg text-sm max-h-40 overflow-y-auto mb-3">
+                  <p className="mb-2">At The Barn MI, we value your commitment and trust in choosing our services/products. To ensure fairness and consistency for all customers, we maintain a strict No Cancellation Policy.</p>
+                  <p className="mb-2"><strong>All Sales Are Final:</strong> Once an order, booking, or purchase is confirmed, it cannot be canceled, modified, or refunded.</p>
+                  <p className="mb-2"><strong>No Refunds or Credits:</strong> Payments made are non-refundable and non-transferable. This includes, but is not limited to, deposits, full payments, and service fees.</p>
+                  <p className="mb-2"><strong>Rescheduling (If Applicable):</strong> If permitted under specific terms of service, rescheduling may be allowed at the sole discretion of The Barn MI, subject to availability and applicable fees. This does not constitute a cancellation.</p>
+                  <p className="mb-2"><strong>Exceptions:</strong> The only exceptions to this policy are circumstances where The Barn MI is unable to fulfill the service or provide the product, in which case a refund or alternative arrangement will be offered.</p>
+                  <p>By completing your purchase, booking, or order with The Barn MI, you acknowledge and agree to this No Cancellation Policy.</p>
+                </div>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={agreementsAccepted.cancellation}
+                    onChange={(e) => setAgreementsAccepted(prev => ({ ...prev, cancellation: e.target.checked }))}
+                    className="rounded border-barn-gray"
+                    data-testid="checkbox-cancellation"
+                  />
+                  <span className="text-sm">I have read and agree to the No Cancellation Policy</span>
+                </label>
+              </div>
+
+              {/* Liability Waiver */}
+              <div className="mb-6">
+                <h4 className="font-medium text-barn-navy mb-2">No Liability & Hold Harmless Agreement</h4>
+                <div className="bg-gray-50 p-4 rounded-lg text-sm max-h-40 overflow-y-auto mb-3">
+                  <p className="mb-2"><strong>Assumption of Risk:</strong> By entering, renting, or otherwise utilizing the facilities, property, or services at The Barn MI ("Venue"), the undersigned individual and/or group representative ("User") acknowledges and agrees that participation in any activities, events, or use of the Venue carries inherent risks, including but not limited to accidents, injury, illness, property damage, or other loss. The User voluntarily assumes all such risks, whether foreseeable or unforeseeable.</p>
+                  <p className="mb-2"><strong>Release of Liability:</strong> To the fullest extent permitted by law, the User, on behalf of themselves, their group, participants, guests, invitees, employees, vendors, and contractors, hereby releases, waives, discharges, and covenants not to sue The Barn MI and Mark Benaske, including their owners, officers, employees, representatives, agents, contractors, heirs, successors, and assigns (collectively, the "Released Parties"), from any and all liability, claims, demands, actions, or causes of action.</p>
+                  <p className="mb-2"><strong>Indemnification / Hold Harmless:</strong> The User agrees to indemnify, defend, and hold harmless The Barn MI and Mark Benaske, as well as all other Released Parties, from and against any and all claims, damages, liabilities, judgments, costs, and expenses (including reasonable attorneys' fees) arising out of, relating to, or resulting from the User's use of the Venue.</p>
+                  <p className="mb-2"><strong>Scope of Agreement:</strong> This Agreement applies to both individual Users and group Users, including any organization, club, company, or informal group represented by the undersigned. The undersigned affirms that they are authorized to sign on behalf of their group and to bind all participants to the terms of this Agreement.</p>
+                  <p><strong>Acknowledgment:</strong> The undersigned affirms that they are at least eighteen (18) years of age, are authorized (if signing on behalf of a group), and have read and understood this No Liability & Hold Harmless Agreement.</p>
+                </div>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={agreementsAccepted.liability}
+                    onChange={(e) => setAgreementsAccepted(prev => ({ ...prev, liability: e.target.checked }))}
+                    className="rounded border-barn-gray"
+                    data-testid="checkbox-liability"
+                  />
+                  <span className="text-sm">I have read and agree to the No Liability & Hold Harmless Agreement</span>
+                </label>
+              </div>
+
+              {/* Digital Signature */}
+              <div className="mb-6">
+                <h4 className="font-medium text-barn-navy mb-2">Digital Signature</h4>
+                <p className="text-sm text-barn-gray mb-3">
+                  By typing your full name below, you are providing your digital signature and agreeing to all terms and conditions above.
+                </p>
+                <input
+                  type="text"
+                  value={signatureName}
+                  onChange={(e) => setSignatureName(e.target.value)}
+                  placeholder="Type your full name here"
+                  className="w-full p-3 border border-barn-gray rounded-lg"
+                  data-testid="input-signature"
+                />
+                {signatureName && (
+                  <div className="mt-2 p-2 bg-barn-navy/5 rounded border-t-2 border-barn-navy">
+                    <p className="text-sm text-barn-gray">Digital signature:</p>
+                    <p className="font-semibold italic text-barn-navy">{signatureName}</p>
+                    <p className="text-xs text-barn-gray">Date: {new Date().toLocaleDateString()}</p>
+                  </div>
+                )}
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-barn-red hover:bg-barn-red/90 text-white"
+                data-testid="button-continue-payment"
+              >
+                Continue to Payment
+              </Button>
+            </CardContent>
+          </Card>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -72,10 +207,39 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
         </CardContent>
       </Card>
 
+      {/* Signature Confirmation */}
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="font-semibold text-barn-navy mb-3">Agreements Signed</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center space-x-2">
+              <i className="fas fa-check text-barn-green"></i>
+              <span>No Cancellation Policy - Accepted</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <i className="fas fa-check text-barn-green"></i>
+              <span>Liability Waiver - Accepted</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <i className="fas fa-signature text-barn-navy"></i>
+              <span>Digitally signed by: <strong>{signatureName}</strong></span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setStep('agreements')}
+              className="text-barn-red border-barn-red hover:bg-barn-red hover:text-white mt-2"
+            >
+              Modify Agreements
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Payment Form */}
       <Card>
         <CardContent className="p-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handlePaymentSubmit} className="space-y-4">
             <div>
               <h4 className="font-semibold text-barn-navy mb-3">Payment Information</h4>
               <PaymentElement />
@@ -85,7 +249,7 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
               <i className="fas fa-shield-alt text-barn-green mt-0.5"></i>
               <p>
                 Your payment information is secure and encrypted. Full payment is due at booking. 
-                Cancellations must be made 24 hours in advance.
+                No cancellations or refunds allowed per our no-cancellation policy.
               </p>
             </div>
 

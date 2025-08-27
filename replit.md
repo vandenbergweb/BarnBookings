@@ -7,7 +7,7 @@ This is a React-based web application for "The Barn MI", a professional baseball
 - Removed all booking cancellation functionality per new no-cancellation policy
 - Updated booking hours to 8AM-9PM EST with validation to prevent bookings past 9PM
 - Added 4-month advance booking limit and 1-hour same-day booking restriction
-- Updated Space B pricing to $30/hour and added Blast Technology to Spaces B & C
+- Updated Space B pricing to $30/hour (database and frontend displays) and added Blast Technology to Spaces B & C
 - Removed Bundle Option 1 from team offerings
 - Updated facility rules: "Arrive on time. No gum, sunflower seeds or collared drinks. Only use the space that you rented or you will be billed for the other space that was used."
 - Changed admin booking display order to chronological (current to future)

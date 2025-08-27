@@ -119,7 +119,7 @@ export default function Landing() {
           <div className="grid grid-cols-2 gap-3">
             <Card>
               <CardContent className="p-3 text-center">
-                <div className="text-barn-green font-bold text-lg">$25/hr</div>
+                <div className="text-barn-green font-bold text-lg">$30/hr</div>
                 <div className="text-sm text-barn-gray">Batting Cage</div>
               </CardContent>
             </Card>

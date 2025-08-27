@@ -298,3 +298,116 @@ See you tomorrow!
     return false;
   }
 }
+
+export async function sendPasswordResetEmail(to: string, customerName: string, resetUrl: string): Promise<boolean> {
+  if (!sgMail) {
+    console.log('SendGrid not configured, skipping password reset email');
+    return false;
+  }
+
+  try {
+    const msg = {
+      to,
+      from: 'info@thebarnmi.com',
+      subject: 'Reset Your Password - The Barn MI',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Password Reset - The Barn MI</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+            .container { max-width: 600px; margin: 0 auto; background-color: white; }
+            .header { background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; padding: 30px 20px; text-align: center; }
+            .content { padding: 30px; }
+            .button { display: inline-block; background: #dc2626; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }
+            .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #666; border-top: 1px solid #e5e5e5; }
+            .warning { background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="margin: 0; font-size: 28px;">Password Reset Request</h1>
+            </div>
+
+            <div class="content">
+              <h2 style="color: #1e3a8a; margin-bottom: 20px;">Hi ${customerName},</h2>
+              
+              <p>We received a request to reset the password for your account at The Barn MI.</p>
+              
+              <p>Click the button below to reset your password:</p>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetUrl}" class="button" style="color: white;">Reset My Password</a>
+              </div>
+              
+              <p>Or copy and paste this link into your browser:</p>
+              <p style="background-color: #f3f4f6; padding: 10px; border-radius: 5px; word-break: break-all; font-family: monospace; font-size: 14px;">${resetUrl}</p>
+
+              <div class="warning">
+                <p style="margin: 0; color: #92400e;"><strong>Important:</strong></p>
+                <ul style="color: #92400e; margin: 10px 0; padding-left: 20px;">
+                  <li>This link will expire in 1 hour</li>
+                  <li>If you didn't request this reset, please ignore this email</li>
+                  <li>Your password will not be changed unless you click the link above</li>
+                </ul>
+              </div>
+
+              <p>If you're having trouble with the button above, copy and paste the URL into your web browser.</p>
+              
+              <p>Need help? Contact us at:</p>
+              <ul>
+                <li>Email: info@thebarnmi.com</li>
+                <li>Phone: (517) 204-4747</li>
+              </ul>
+            </div>
+
+            <div class="footer">
+              <p style="margin: 0;">
+                <strong>The Barn MI</strong><br>
+                6090 W River Rd, Weidman MI 48893<br>
+                Professional Baseball Training Facility
+              </p>
+              <p style="margin: 10px 0 0 0; font-size: 12px;">
+                © ${new Date().getFullYear()} The Barn MI. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+Password Reset Request - The Barn MI
+
+Hi ${customerName},
+
+We received a request to reset the password for your account at The Barn MI.
+
+Click this link to reset your password:
+${resetUrl}
+
+IMPORTANT:
+- This link will expire in 1 hour
+- If you didn't request this reset, please ignore this email
+- Your password will not be changed unless you click the link above
+
+Need help? Contact us:
+Email: info@thebarnmi.com
+Phone: (517) 204-4747
+Address: 6090 W River Rd, Weidman MI 48893
+
+© ${new Date().getFullYear()} The Barn MI. All rights reserved.
+      `
+    };
+
+    await sgMail.send(msg);
+    console.log(`Password reset email sent to ${to}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    return false;
+  }
+}

@@ -3,6 +3,7 @@ import {
   spaces,
   bundles,
   bookings,
+  passwordResetTokens,
   type User,
   type UpsertUser,
   type Space,
@@ -54,6 +55,12 @@ export interface IStorage {
   getBookingsForTimeRange(startTime: Date, endTime: Date): Promise<Booking[]>;
   getBookingsNeedingReminders(): Promise<Booking[]>;
   markReminderSent(bookingId: string): Promise<void>;
+  
+  // Password reset operations
+  createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void>;
+  getPasswordResetToken(token: string): Promise<{ userId: string; expiresAt: Date; used: boolean } | undefined>;
+  markPasswordResetTokenUsed(token: string): Promise<void>;
+  updateUserPassword(userId: string, passwordHash: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -305,6 +312,42 @@ export class DatabaseStorage implements IStorage {
       .update(bookings)
       .set({ reminderSent: true, updatedAt: new Date() })
       .where(eq(bookings.id, bookingId));
+  }
+
+  // Password reset operations
+  async createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void> {
+    await db.insert(passwordResetTokens).values({
+      userId,
+      token,
+      expiresAt,
+      used: false,
+    });
+  }
+
+  async getPasswordResetToken(token: string): Promise<{ userId: string; expiresAt: Date; used: boolean } | undefined> {
+    const [resetToken] = await db
+      .select({
+        userId: passwordResetTokens.userId,
+        expiresAt: passwordResetTokens.expiresAt,
+        used: passwordResetTokens.used,
+      })
+      .from(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
+    return resetToken;
+  }
+
+  async markPasswordResetTokenUsed(token: string): Promise<void> {
+    await db
+      .update(passwordResetTokens)
+      .set({ used: true })
+      .where(eq(passwordResetTokens.token, token));
+  }
+
+  async updateUserPassword(userId: string, passwordHash: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ passwordHash })
+      .where(eq(users.id, userId));
   }
 }
 

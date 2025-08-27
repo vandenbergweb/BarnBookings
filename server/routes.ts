@@ -3,11 +3,13 @@ import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import passport from "passport";
 import { storage } from "./storage";
-import { registerSchema, loginSchema, type RegisterRequest, type LoginRequest } from "@shared/schema";
+import { registerSchema, loginSchema, passwordResetRequestSchema, passwordResetSchema, type RegisterRequest, type LoginRequest, type PasswordResetRequest, type PasswordReset } from "@shared/schema";
 import { setupAuth, isAuthenticated, validateSession } from "./localAuth";
 import { isAdmin } from "./adminAuth";
 import { insertBookingSchema } from "@shared/schema";
-import { sendBookingConfirmation, sendBookingReminder } from "./email";
+import { sendBookingConfirmation, sendBookingReminder, sendPasswordResetEmail } from "./email";
+import { nanoid } from "nanoid";
+import bcrypt from "bcryptjs";
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-07-30.basil",
@@ -143,6 +145,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.redirect('/login');
     });
+  });
+
+  // Password reset request
+  app.post('/api/auth/password-reset-request', async (req, res) => {
+    try {
+      const validatedData = passwordResetRequestSchema.parse(req.body);
+      
+      // Find user by email
+      const user = await storage.getUserByEmail(validatedData.email);
+      
+      if (!user || user.authProvider !== 'local') {
+        // Don't reveal if user exists or not for security
+        return res.json({ 
+          message: 'If an account with that email exists, a password reset link has been sent.' 
+        });
+      }
+
+      // Generate reset token
+      const resetToken = nanoid(32);
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+      // Save reset token
+      await storage.createPasswordResetToken(user.id, resetToken, expiresAt);
+
+      // Send reset email
+      const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${resetToken}`;
+      await sendPasswordResetEmail(user.email, user.firstName || 'Customer', resetUrl);
+
+      res.json({ 
+        message: 'If an account with that email exists, a password reset link has been sent.' 
+      });
+    } catch (error: any) {
+      console.error('Password reset request error:', error);
+      res.status(400).json({ 
+        message: 'Validation failed',
+        errors: error.errors || [{ message: error.message }]
+      });
+    }
+  });
+
+  // Password reset completion
+  app.post('/api/auth/password-reset', async (req, res) => {
+    try {
+      const validatedData = passwordResetSchema.parse(req.body);
+      
+      // Find and validate reset token
+      const resetTokenData = await storage.getPasswordResetToken(validatedData.token);
+      
+      if (!resetTokenData || resetTokenData.used || new Date() > resetTokenData.expiresAt) {
+        return res.status(400).json({ 
+          message: 'Invalid or expired reset token' 
+        });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(validatedData.newPassword, 12);
+
+      // Update user password
+      await storage.updateUserPassword(resetTokenData.userId, hashedPassword);
+
+      // Mark token as used
+      await storage.markPasswordResetTokenUsed(validatedData.token);
+
+      res.json({ message: 'Password has been reset successfully' });
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      res.status(400).json({ 
+        message: 'Validation failed',
+        errors: error.errors || [{ message: error.message }]
+      });
+    }
   });
 
   // Emergency admin creation endpoint (only works if no admin exists)

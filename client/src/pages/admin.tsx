@@ -34,11 +34,13 @@ function AdminContent() {
   const { data: spaces } = useQuery<Space[]>({
     queryKey: ["/api/spaces"],
     retry: false,
+    staleTime: 0, // Always fetch fresh data
   });
 
   const { data: bundles } = useQuery<Bundle[]>({
     queryKey: ["/api/bundles"],
     retry: false,
+    staleTime: 0, // Always fetch fresh data
   });
 
   const { data: allBookings } = useQuery<Booking[]>({

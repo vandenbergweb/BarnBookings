@@ -90,6 +90,7 @@ export default function BookingPage() {
   const { data: spaces } = useQuery<Space[]>({
     queryKey: ["/api/spaces"],
     retry: false,
+    staleTime: 0, // Always fetch fresh data
   });
 
   const { data: bundles } = useQuery<Bundle[]>({

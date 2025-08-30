@@ -35,6 +35,7 @@ export default function Home() {
   const { data: spaces, isLoading: spacesLoading } = useQuery<Space[]>({
     queryKey: ["/api/spaces"],
     retry: false,
+    staleTime: 0, // Always fetch fresh data
   });
 
   const { data: bundles, isLoading: bundlesLoading } = useQuery<Bundle[]>({

@@ -106,6 +106,7 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
         confirmParams: {
           return_url: `${window.location.protocol}//${window.location.host}/payment-success?bookingId=${booking.id}`,
         },
+        redirect: 'if_required', // Only redirect if 3D Secure or similar authentication is needed
       });
 
       if (error) {
@@ -153,7 +154,8 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
           variant: "destructive",
         });
       } else {
-        // This won't run for redirect-based payments, but keeping for non-redirect flows
+        // Payment succeeded without requiring redirect - navigate directly
+        console.log('Payment completed successfully, navigating to success page');
         setLocation(`/payment-success?bookingId=${booking.id}`);
       }
     } catch (err: any) {

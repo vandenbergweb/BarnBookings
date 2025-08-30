@@ -56,7 +56,7 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
       const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/payment-success?bookingId=${booking.id}`,
+          return_url: `${window.location.protocol}//${window.location.host}/payment-success?bookingId=${booking.id}`,
         },
       });
 

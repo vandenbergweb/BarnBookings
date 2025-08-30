@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
 import { Users, ArrowLeft, Calendar } from "lucide-react";
-import baseballLogo from "@assets/baseball_1754937097015.png";
+import baseballLogo from "@assets/generated_images/White_baseball_header_icon_20370e22.png";
 
 export default function AdminSimplePage() {
   const { user, isLoading } = useAuth();

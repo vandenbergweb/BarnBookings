@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import type { Space, Bundle, Booking } from "@shared/schema";
-import baseballLogo from "@assets/baseball_1754937097015.png";
+import baseballLogo from "@assets/generated_images/White_baseball_header_icon_20370e22.png";
 import { Link } from "wouter";
 import { Users, Settings, Calendar } from "lucide-react";
 

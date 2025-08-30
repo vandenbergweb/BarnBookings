@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { passwordResetRequestSchema, type PasswordResetRequest } from "@shared/schema";
-import baseballLogo from "@assets/baseball_1754937097015.png";
+import baseballLogo from "@assets/generated_images/White_baseball_header_icon_20370e22.png";
 
 export default function ForgotPassword() {
   const [, setLocation] = useLocation();

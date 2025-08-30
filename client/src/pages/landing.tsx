@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import baseballImage from "@assets/baseballbarn2_1754766048143.png";
-import baseballLogo from "@assets/baseball_1754937097015.png";
+import baseballLogo from "@assets/generated_images/White_baseball_header_icon_20370e22.png";
 
 export default function Landing() {
   return (

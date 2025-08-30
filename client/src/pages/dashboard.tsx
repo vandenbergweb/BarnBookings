@@ -156,14 +156,7 @@ export default function Dashboard() {
                       </div>
 
 
-                      
-                      {/* Reminder Notice */}
-                      <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mt-3">
-                        <div className="flex items-center text-yellow-800 text-xs">
-                          <i className="fas fa-bell mr-2"></i>
-                          <span>Arrive on time. No gum, sunflower seeds or collared drinks. Only use the space that you rented or you will be billed for the other space that was used.</span>
-                        </div>
-                      </div>
+
                     </CardContent>
                   </Card>
                 ))}

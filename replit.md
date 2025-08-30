@@ -14,7 +14,7 @@ This is a React-based web application for "The Barn MI", a professional baseball
 - Renamed Bundle Option 2 → "Team Bundle 1 - Spaces A, B & C - Practice + batting cages"  
 - Renamed Bundle Option 3 → "Team Bundle 2 - Entire Facility - Spaces A, B, C & D"
 - Updated facility rules: "Arrive on time. No gum, sunflower seeds or collared drinks. Only use the space that you rented or you will be billed for the other space that was used."
-- Changed admin booking display order to chronological (current to future)
+- Improved admin panel: separated past bookings from current/future bookings with distinct visual styling and sorting
 - All timezone handling set to EST
 - Integrated cancellation policy and liability waiver documents into checkout with digital signature requirement
 - **RESOLVED: Payment Processing Issues (August 30, 2025)**: Fixed critical payment processing errors caused by React Hooks violations and iframe redirect security issues. Payment system now fully operational with enhanced error handling and proper Stripe Elements configuration.

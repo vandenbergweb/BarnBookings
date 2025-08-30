@@ -302,65 +302,107 @@ function AdminContent() {
           </TabsContent>
 
           <TabsContent value="view-bookings" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>All Bookings ({(allBookings as any)?.length || 0})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {(allBookings as any)?.sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())?.map((booking: any) => {
-                    const startDate = new Date(booking.startTime);
-                    const endDate = new Date(booking.endTime);
-                    
-                    return (
-                      <div key={booking.id} className="border border-barn-gray/20 rounded-lg p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <div>
-                            <p className="text-sm font-medium text-barn-navy">Customer</p>
-                            <p className="text-sm text-barn-gray" data-testid={`text-customer-${booking.id}`}>
-                              {(booking as any).customerName || 'Unknown'}
-                            </p>
-                            <p className="text-xs text-barn-gray/70">
-                              {(booking as any).customerEmail}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-barn-navy">Date & Time</p>
-                            <p className="text-sm text-barn-gray">
-                              {startDate.toLocaleDateString()}<br/>
-                              {startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - 
-                              {endDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-barn-navy">Payment</p>
-                            <p className="text-sm text-barn-gray">
-                              ${booking.totalAmount} ({booking.paymentMethod || 'stripe'})
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-barn-navy">Status</p>
-                            <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                              booking.status === 'confirmed' 
-                                ? 'bg-barn-green/20 text-barn-green' 
-                                : 'bg-barn-red/20 text-barn-red'
-                            }`}>
-                              {booking.status}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+            {(() => {
+              const now = new Date();
+              const bookings = (allBookings as any) || [];
+              
+              // Separate bookings into past and current/future
+              const pastBookings = bookings.filter((booking: any) => new Date(booking.endTime) < now)
+                .sort((a: any, b: any) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()); // Most recent first
+              
+              const currentFutureBookings = bookings.filter((booking: any) => new Date(booking.endTime) >= now)
+                .sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()); // Earliest first
 
-                  {!(allBookings as any)?.length && (
-                    <div className="text-center py-8 text-barn-gray">
-                      No bookings found
+              const BookingCard = ({ booking }: { booking: any }) => {
+                const startDate = new Date(booking.startTime);
+                const endDate = new Date(booking.endTime);
+                const isPast = endDate < now;
+                
+                return (
+                  <div key={booking.id} className={`border rounded-lg p-4 ${isPast ? 'border-gray-300 bg-gray-50' : 'border-barn-gray/20 bg-white'}`}>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-barn-navy">Customer</p>
+                        <p className={`text-sm ${isPast ? 'text-gray-600' : 'text-barn-gray'}`} data-testid={`text-customer-${booking.id}`}>
+                          {booking.customerName || 'Unknown'}
+                        </p>
+                        <p className={`text-xs ${isPast ? 'text-gray-500' : 'text-barn-gray/70'}`}>
+                          {booking.customerEmail}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-barn-navy">Date & Time</p>
+                        <p className={`text-sm ${isPast ? 'text-gray-600' : 'text-barn-gray'}`}>
+                          {startDate.toLocaleDateString()}<br/>
+                          {startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - 
+                          {endDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-barn-navy">Payment</p>
+                        <p className={`text-sm ${isPast ? 'text-gray-600' : 'text-barn-gray'}`}>
+                          ${booking.totalAmount} ({booking.paymentMethod || 'stripe'})
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-barn-navy">Status</p>
+                        <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+                          booking.status === 'confirmed' 
+                            ? isPast ? 'bg-gray-200 text-gray-600' : 'bg-barn-green/20 text-barn-green'
+                            : 'bg-barn-red/20 text-barn-red'
+                        }`}>
+                          {booking.status}
+                        </span>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                  </div>
+                );
+              };
+
+              return (
+                <>
+                  {/* Current & Future Bookings */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Current & Future Bookings ({currentFutureBookings.length})</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {currentFutureBookings.map((booking: any) => (
+                          <BookingCard key={booking.id} booking={booking} />
+                        ))}
+
+                        {currentFutureBookings.length === 0 && (
+                          <div className="text-center py-8 text-barn-gray">
+                            No current or future bookings
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Past Bookings */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Past Bookings ({pastBookings.length})</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {pastBookings.map((booking: any) => (
+                          <BookingCard key={booking.id} booking={booking} />
+                        ))}
+
+                        {pastBookings.length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            No past bookings
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              );
+            })()}
           </TabsContent>
         </Tabs>
       </main>

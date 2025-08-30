@@ -18,6 +18,7 @@ This is a React-based web application for "The Barn MI", a professional baseball
 - All timezone handling set to EST including email confirmations and reminders
 - Integrated cancellation policy and liability waiver documents into checkout with digital signature requirement
 - **RESOLVED: Payment Processing Issues (August 30, 2025)**: Fixed critical payment processing errors caused by React Hooks violations and iframe redirect security issues. Payment system now fully operational with enhanced error handling and proper Stripe Elements configuration.
+- **RESOLVED: Pricing Cache Issues (August 30, 2025)**: Fixed deployed app showing stale pricing (Space B $25 vs correct $30) by implementing comprehensive cache-busting: client-side fresh data fetching, server-side no-cache headers, automatic cache clearing on authentication, and URL timestamping for pricing endpoints.
 
 # User Preferences
 

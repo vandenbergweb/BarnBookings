@@ -29,8 +29,14 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    // Add cache-busting for pricing-sensitive endpoints
+    const url = queryKey.join("/") as string;
+    const isPricingSensitive = url.includes("/spaces") || url.includes("/bundles");
+    const fetchUrl = isPricingSensitive ? `${url}?t=${Date.now()}` : url;
+    
+    const res = await fetch(fetchUrl, {
       credentials: "include",
+      cache: "no-cache", // Force fresh fetch
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
@@ -47,7 +53,8 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      staleTime: 30000, // 30 seconds instead of Infinity
+      gcTime: 60000, // 1 minute garbage collection
       retry: false,
     },
     mutations: {
@@ -55,3 +62,11 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+// Utility function to clear all pricing-related cache
+export const clearPricingCache = () => {
+  queryClient.invalidateQueries({ queryKey: ["/api/spaces"] });
+  queryClient.invalidateQueries({ queryKey: ["/api/bundles"] });
+  queryClient.removeQueries({ queryKey: ["/api/spaces"] });
+  queryClient.removeQueries({ queryKey: ["/api/bundles"] });
+};

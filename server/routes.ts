@@ -582,6 +582,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Spaces routes
   app.get('/api/spaces', async (req, res) => {
     try {
+      // Add cache-control headers to prevent browser caching
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
       const spaces = await storage.getSpaces();
       res.json(spaces);
     } catch (error) {
@@ -593,6 +598,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Bundles routes
   app.get('/api/bundles', async (req, res) => {
     try {
+      // Add cache-control headers to prevent browser caching
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
       const bundles = await storage.getBundles();
       res.json(bundles);
     } catch (error) {

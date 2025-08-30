@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { clearPricingCache } from "../lib/queryClient";
 
 export function useAuth() {
   const { data: user, isLoading, error, refetch } = useQuery({
@@ -15,6 +17,14 @@ export function useAuth() {
     staleTime: 0, // Always fresh check
     gcTime: 0, // Don't cache
   });
+
+  // Clear pricing cache when user authentication succeeds
+  useEffect(() => {
+    if (user && !isLoading) {
+      console.log('Authentication successful, clearing pricing cache for fresh data');
+      clearPricingCache();
+    }
+  }, [!!user, isLoading]); // Use !!user to avoid dependency array issues
 
   // Debug logging
   console.log('useAuth hook:', {

@@ -52,22 +52,32 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
       return;
     }
 
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/payment-success?bookingId=${booking.id}`,
-      },
-    });
+    try {
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/payment-success?bookingId=${booking.id}`,
+        },
+      });
 
-    if (error) {
+      if (error) {
+        console.error('Stripe payment error:', error);
+        toast({
+          title: "Payment Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        // This won't run for redirect-based payments, but keeping for non-redirect flows
+        setLocation(`/payment-success?bookingId=${booking.id}`);
+      }
+    } catch (err) {
+      console.error('Unhandled payment error:', err);
       toast({
-        title: "Payment Failed",
-        description: error.message,
+        title: "Payment Error",
+        description: "An unexpected error occurred during payment processing.",
         variant: "destructive",
       });
-    } else {
-      // This won't run for redirect-based payments, but keeping for non-redirect flows
-      setLocation(`/payment-success?bookingId=${booking.id}`);
     }
   };
 

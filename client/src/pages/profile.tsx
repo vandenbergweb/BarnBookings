@@ -127,7 +127,7 @@ export default function Profile() {
                 </div>
                 <div className="flex items-center">
                   <i className="fas fa-clock mr-3 w-4 text-barn-red"></i>
-                  <span>Mon-Fri: 6am-10pm, Sat-Sun: 8am-8pm</span>
+                  <span>Daily: 8am-9pm EST</span>
                 </div>
               </div>
             </CardContent>

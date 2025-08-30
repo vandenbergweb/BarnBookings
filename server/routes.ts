@@ -582,12 +582,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Spaces routes
   app.get('/api/spaces', async (req, res) => {
     try {
-      // Add cache-control headers to prevent browser caching
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+      // Ultra-aggressive cache-busting headers for deployment
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      res.setHeader('ETag', `spaces-${Date.now()}-${Math.random()}`);
+      res.setHeader('Last-Modified', new Date().toUTCString());
+      res.setHeader('Vary', '*');
       
+      // Force fresh database query - ignore any ORM caching
       const spaces = await storage.getSpaces();
+      console.log('FRESH SPACES DATA SERVED:', spaces.map(s => `${s.name}: $${s.hourlyRate}`));
       res.json(spaces);
     } catch (error) {
       console.error("Error fetching spaces:", error);

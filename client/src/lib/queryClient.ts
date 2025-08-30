@@ -29,10 +29,11 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // Add cache-busting for pricing-sensitive endpoints
+    // Ultra-aggressive cache-busting for pricing-sensitive endpoints
     const url = queryKey.join("/") as string;
     const isPricingSensitive = url.includes("/spaces") || url.includes("/bundles");
-    const fetchUrl = isPricingSensitive ? `${url}?t=${Date.now()}` : url;
+    const cacheBreaker = `t=${Date.now()}&r=${Math.random()}&v=${Math.floor(Date.now() / 1000)}`;
+    const fetchUrl = isPricingSensitive ? `${url}?${cacheBreaker}` : url;
     
     const res = await fetch(fetchUrl, {
       credentials: "include",
@@ -53,8 +54,8 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: 30000, // 30 seconds instead of Infinity
-      gcTime: 60000, // 1 minute garbage collection
+      staleTime: 0, // Always fresh for pricing
+      gcTime: 0, // No garbage collection for fresh data
       retry: false,
     },
     mutations: {

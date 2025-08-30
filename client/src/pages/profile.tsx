@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import Navigation from "@/components/navigation";
-import baseballLogo from "@assets/generated_images/White_baseball_header_icon_20370e22.png";
+import baseballLogo from "@assets/Baseball Barn MI_1756584401549.png";
 
 export default function Profile() {
   const { user, isAuthenticated, isLoading } = useAuth();

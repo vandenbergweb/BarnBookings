@@ -11,7 +11,7 @@ import SpaceCard from "@/components/space-card";
 import BundleCard from "@/components/bundle-card";
 import type { Space, Bundle } from "@shared/schema";
 import baseballImage from "@assets/baseballbarn2_1754766048143.png";
-import baseballLogo from "@assets/generated_images/White_baseball_header_icon_20370e22.png";
+import baseballLogo from "@assets/Baseball Barn MI_1756584401549.png";
 
 export default function Home() {
   const { toast } = useToast();

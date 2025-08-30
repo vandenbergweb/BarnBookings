@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { registerSchema, type RegisterRequest } from "@shared/schema";
-import baseballLogo from "@assets/generated_images/White_baseball_header_icon_20370e22.png";
+import baseballLogo from "@assets/Baseball Barn MI_1756584401549.png";
 
 export default function Register() {
   const [, setLocation] = useLocation();

@@ -1065,7 +1065,7 @@ async function initializeData() {
           name: "Space B",
           description: "12' x 40' Batting Cage",
           dimensions: "12' x 40'",
-          equipment: "Includes batting tee, balls, L-screen and Blast Technology",
+          equipment: "Includes batting tee, balls, Blast Technology, and L-screen",
           hourlyRate: "30.00",
         },
         {
@@ -1073,7 +1073,7 @@ async function initializeData() {
           name: "Space C", 
           description: "12' x 40' Batting Cage",
           dimensions: "12' x 40'",
-          equipment: "Includes batting tee, balls, L-screen, Hack Attack Jr Pitching Machine and Blast Technology",
+          equipment: "Includes batting tee, balls, L-screen, Blast Technology, and Hack Attack Jr Pitching Machine",
           hourlyRate: "50.00",
         },
         {

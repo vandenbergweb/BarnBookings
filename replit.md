@@ -8,6 +8,8 @@ This is a React-based web application for "The Barn MI", a professional baseball
 - Updated booking hours to 8AM-9PM EST with validation to prevent bookings past 9PM
 - Added 4-month advance booking limit and 1-hour same-day booking restriction
 - Updated Space B pricing to $30/hour (database and frontend displays) and added Blast Technology to Spaces B & C
+- Updated Space B equipment: "Includes batting tee, balls, Blast Technology, and L-screen"
+- Updated Space C equipment: "Includes batting tee, balls, L-screen, Blast Technology, and Hack Attack Jr Pitching Machine"
 - Removed Bundle Option 1 from team offerings (deactivated in database)
 - Renamed Bundle Option 2 → "Team Bundle 1 - Spaces A, B & C - Practice + batting cages"  
 - Renamed Bundle Option 3 → "Team Bundle 2 - Entire Facility - Spaces A, B, C & D"

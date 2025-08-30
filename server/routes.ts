@@ -589,10 +589,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('ETag', `spaces-${Date.now()}-${Math.random()}`);
       res.setHeader('Last-Modified', new Date().toUTCString());
       res.setHeader('Vary', '*');
+      res.setHeader('X-Pricing-Version', '2025-08-30-v2'); // Force new deployment recognition
       
-      // Force fresh database query - ignore any ORM caching
+      // Force fresh database query with explicit logging
+      console.log('=== SPACES API CALLED ===');
+      console.log('Environment:', process.env.NODE_ENV);
+      console.log('Request headers:', req.headers);
+      
       const spaces = await storage.getSpaces();
-      console.log('FRESH SPACES DATA SERVED:', spaces.map(s => `${s.name}: $${s.hourlyRate}`));
+      console.log('RAW DATABASE SPACES:', spaces);
+      console.log('PRICING VERIFICATION:', spaces.map(s => `${s.name}: $${s.hourlyRate}`));
+      
+      // Double-check Space B specifically
+      const spaceB = spaces.find(s => s.id === 'B');
+      console.log('SPACE B VERIFICATION:', spaceB ? `$${spaceB.hourlyRate}` : 'NOT FOUND');
+      
       res.json(spaces);
     } catch (error) {
       console.error("Error fetching spaces:", error);

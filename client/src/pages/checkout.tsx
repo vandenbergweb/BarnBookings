@@ -1,6 +1,6 @@
 import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { apiRequest } from "@/lib/queryClient";
@@ -32,6 +32,31 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [paymentElementReady, setPaymentElementReady] = useState(false);
 
+  // Add global error handler to catch any unhandled errors in this component
+  useEffect(() => {
+    const handleError = (event: any) => {
+      console.error('Global checkout error caught:', {
+        error: event.error,
+        message: event.error?.message,
+        stack: event.error?.stack,
+        type: event.type
+      });
+    };
+    
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('Unhandled promise rejection in checkout:', {
+        reason: event.reason,
+        promise: event.promise
+      });
+    });
+    
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleError);
+    };
+  }, []);
+
   const handleAgreementSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -62,6 +87,20 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
     setIsPaymentLoading(true);
 
     try {
+      // Validate elements before confirming payment
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        console.error('Element submission error:', submitError);
+        setIsPaymentLoading(false);
+        toast({
+          title: "Form Validation Error",
+          description: submitError.message || "Please check your payment information.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Confirming payment for booking:', booking.id);
       const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
@@ -118,11 +157,20 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
         setLocation(`/payment-success?bookingId=${booking.id}`);
       }
     } catch (err: any) {
-      console.error('Unhandled payment error:', err);
+      console.error('Unhandled payment error:', {
+        error: err,
+        message: err?.message,
+        stack: err?.stack,
+        name: err?.name,
+        type: typeof err,
+        keys: Object.keys(err || {})
+      });
       
       let errorMessage = "An unexpected error occurred during payment processing.";
       if (err?.message) {
         errorMessage = `Payment processing error: ${err.message}`;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
       }
       
       toast({
@@ -401,6 +449,16 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
                   console.log('Payment element ready');
                   setPaymentElementReady(true);
                 }}
+                onChange={(event) => {
+                  console.log('Payment element changed:', {
+                    complete: event.complete,
+                    empty: event.empty,
+                    error: event.error
+                  });
+                  if (event.error) {
+                    console.error('Payment element error:', event.error);
+                  }
+                }}
               />
             </div>
 
@@ -442,6 +500,45 @@ export default function Checkout() {
   const { isAuthenticated, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [clientSecret, setClientSecret] = useState("");
+  const [elementsKey, setElementsKey] = useState(0); // Force remount when needed
+
+  // Move useMemo to the top level to avoid conditional hook usage
+  const elementsOptions = useMemo(() => ({
+    clientSecret,
+    appearance: {
+      theme: 'stripe' as const,
+      variables: {
+        colorPrimary: '#1e3a5f', // barn-navy
+        colorBackground: '#ffffff',
+        colorText: '#1e3a5f',
+        colorDanger: '#dc2626', // barn-red
+        colorSuccess: '#22c55e', // barn-green
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        spacingUnit: '4px',
+        borderRadius: '8px',
+        colorTextSecondary: '#6b7280',
+        colorTextPlaceholder: '#9ca3af'
+      },
+      rules: {
+        '.Input': {
+          border: '1px solid #d1d5db',
+          borderRadius: '8px',
+          padding: '12px',
+          fontSize: '16px'
+        },
+        '.Input:focus': {
+          borderColor: '#1e3a5f',
+          boxShadow: '0 0 0 2px rgba(30, 58, 95, 0.1)'
+        },
+        '.Label': {
+          fontWeight: '500',
+          fontSize: '14px',
+          marginBottom: '6px'
+        }
+      }
+    },
+    loader: 'auto' as const
+  }), [clientSecret]);
 
   // Get booking ID from URL params
   const urlParams = new URLSearchParams(window.location.search);
@@ -488,6 +585,8 @@ export default function Checkout() {
         .then((data) => {
           console.log("Payment intent created:", data);
           setClientSecret(data.clientSecret);
+          // Force remount Elements with new client secret
+          setElementsKey(prev => prev + 1);
         })
         .catch((error) => {
           console.error('Payment intent error:', error);
@@ -628,45 +727,8 @@ export default function Checkout() {
     );
   } else {
     // Show Stripe payment interface with enhanced configuration
-    const elementsOptions = {
-      clientSecret,
-      appearance: {
-        theme: 'stripe' as const,
-        variables: {
-          colorPrimary: '#1e3a5f', // barn-navy
-          colorBackground: '#ffffff',
-          colorText: '#1e3a5f',
-          colorDanger: '#dc2626', // barn-red
-          colorSuccess: '#22c55e', // barn-green
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          spacingUnit: '4px',
-          borderRadius: '8px',
-          colorTextSecondary: '#6b7280',
-          colorTextPlaceholder: '#9ca3af'
-        },
-        rules: {
-          '.Input': {
-            border: '1px solid #d1d5db',
-            borderRadius: '8px',
-            padding: '12px',
-            fontSize: '16px'
-          },
-          '.Input:focus': {
-            borderColor: '#1e3a5f',
-            boxShadow: '0 0 0 2px rgba(30, 58, 95, 0.1)'
-          },
-          '.Label': {
-            fontWeight: '500',
-            fontSize: '14px',
-            marginBottom: '6px'
-          }
-        }
-      },
-      loader: 'auto' as const
-    };
-
     content = (
-      <Elements stripe={stripePromise} options={elementsOptions}>
+      <Elements key={`${elementsKey}-${clientSecret}`} stripe={stripePromise} options={elementsOptions}>
         <div className="p-4">
           <CheckoutForm booking={booking} spaceName={spaceName || 'Unknown'} />
         </div>

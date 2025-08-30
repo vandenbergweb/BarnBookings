@@ -29,6 +29,8 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
   });
   const [showCancellationPolicy, setShowCancellationPolicy] = useState(false);
   const [showLiabilityWaiver, setShowLiabilityWaiver] = useState(false);
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [paymentElementReady, setPaymentElementReady] = useState(false);
 
   const handleAgreementSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,9 +50,16 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
   const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements) {
+    if (!stripe || !elements || !paymentElementReady) {
+      toast({
+        title: "Payment Not Ready",
+        description: "Please wait for the payment form to finish loading.",
+        variant: "destructive",
+      });
       return;
     }
+
+    setIsPaymentLoading(true);
 
     try {
       const { error } = await stripe.confirmPayment({
@@ -61,23 +70,68 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
       });
 
       if (error) {
-        console.error('Stripe payment error:', error);
+        console.error('Detailed Stripe error:', {
+          type: error.type,
+          code: error.code,
+          message: error.message,
+          decline_code: error.decline_code,
+          payment_intent: error.payment_intent
+        });
+        
+        // Show specific error based on error type
+        let errorMessage = error.message;
+        let errorTitle = "Payment Failed";
+        
+        if (error.type === 'card_error') {
+          errorTitle = "Card Error";
+          errorMessage = error.message || "There was an issue with your card.";
+        } else if (error.type === 'validation_error') {
+          errorTitle = "Validation Error";
+          errorMessage = `Please check your payment information: ${error.message}`;
+        } else if (error.code === 'incomplete_number') {
+          errorTitle = "Incomplete Card Number";
+          errorMessage = "Please enter a complete card number.";
+        } else if (error.code === 'incomplete_cvc') {
+          errorTitle = "Incomplete Security Code";
+          errorMessage = "Please enter your card's security code.";
+        } else if (error.code === 'incomplete_expiry') {
+          errorTitle = "Incomplete Expiry Date";
+          errorMessage = "Please enter your card's expiry date.";
+        } else if (error.code === 'expired_card') {
+          errorTitle = "Expired Card";
+          errorMessage = "Your card has expired. Please use a different card.";
+        } else if (error.code === 'insufficient_funds') {
+          errorTitle = "Insufficient Funds";
+          errorMessage = "Your card has insufficient funds. Please use a different card.";
+        } else if (error.code === 'card_declined') {
+          errorTitle = "Card Declined";
+          errorMessage = "Your card was declined. Please contact your bank or use a different card.";
+        }
+        
         toast({
-          title: "Payment Failed",
-          description: error.message,
+          title: errorTitle,
+          description: errorMessage,
           variant: "destructive",
         });
       } else {
         // This won't run for redirect-based payments, but keeping for non-redirect flows
         setLocation(`/payment-success?bookingId=${booking.id}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Unhandled payment error:', err);
+      
+      let errorMessage = "An unexpected error occurred during payment processing.";
+      if (err?.message) {
+        errorMessage = `Payment processing error: ${err.message}`;
+      }
+      
       toast({
         title: "Payment Error",
-        description: "An unexpected error occurred during payment processing.",
+        description: errorMessage,
         variant: "destructive",
       });
+    } finally {
+      setIsPaymentLoading(false);
     }
   };
 
@@ -318,7 +372,36 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
           <form onSubmit={handlePaymentSubmit} className="space-y-4">
             <div>
               <h4 className="font-semibold text-barn-navy mb-3">Payment Information</h4>
-              <PaymentElement />
+              {!paymentElementReady && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin w-6 h-6 border-2 border-barn-navy border-t-transparent rounded-full mr-3" />
+                  <span className="text-barn-gray">Loading payment form...</span>
+                </div>
+              )}
+              <PaymentElement
+                id="payment-element"
+                options={{
+                  layout: {
+                    type: 'tabs',
+                    defaultCollapsed: false,
+                    radios: false,
+                    spacedAccordionItems: false
+                  },
+                  defaultValues: {
+                    billingDetails: {
+                      name: ''
+                    }
+                  }
+                }}
+                onLoaderStart={() => {
+                  console.log('Payment element loading started');
+                  setPaymentElementReady(false);
+                }}
+                onReady={() => {
+                  console.log('Payment element ready');
+                  setPaymentElementReady(true);
+                }}
+              />
             </div>
 
             <div className="flex items-start space-x-3 text-xs text-barn-gray">
@@ -331,12 +414,21 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
 
             <Button 
               type="submit" 
-              disabled={!stripe}
-              className="w-full bg-barn-red hover:bg-barn-red/90 text-white py-4 text-lg font-semibold flex items-center justify-center space-x-2"
+              disabled={!stripe || !paymentElementReady || isPaymentLoading}
+              className="w-full bg-barn-red hover:bg-barn-red/90 text-white py-4 text-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-50"
               data-testid="button-pay"
             >
-              <i className="fas fa-lock"></i>
-              <span>Pay ${booking.totalAmount}</span>
+              {isPaymentLoading ? (
+                <>
+                  <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-lock"></i>
+                  <span>Pay ${booking.totalAmount}</span>
+                </>
+              )}
             </Button>
           </form>
         </CardContent>
@@ -535,9 +627,46 @@ export default function Checkout() {
       </div>
     );
   } else {
-    // Show Stripe payment interface
+    // Show Stripe payment interface with enhanced configuration
+    const elementsOptions = {
+      clientSecret,
+      appearance: {
+        theme: 'stripe' as const,
+        variables: {
+          colorPrimary: '#1e3a5f', // barn-navy
+          colorBackground: '#ffffff',
+          colorText: '#1e3a5f',
+          colorDanger: '#dc2626', // barn-red
+          colorSuccess: '#22c55e', // barn-green
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          spacingUnit: '4px',
+          borderRadius: '8px',
+          colorTextSecondary: '#6b7280',
+          colorTextPlaceholder: '#9ca3af'
+        },
+        rules: {
+          '.Input': {
+            border: '1px solid #d1d5db',
+            borderRadius: '8px',
+            padding: '12px',
+            fontSize: '16px'
+          },
+          '.Input:focus': {
+            borderColor: '#1e3a5f',
+            boxShadow: '0 0 0 2px rgba(30, 58, 95, 0.1)'
+          },
+          '.Label': {
+            fontWeight: '500',
+            fontSize: '14px',
+            marginBottom: '6px'
+          }
+        }
+      },
+      loader: 'auto' as const
+    };
+
     content = (
-      <Elements stripe={stripePromise} options={{ clientSecret }}>
+      <Elements stripe={stripePromise} options={elementsOptions}>
         <div className="p-4">
           <CheckoutForm booking={booking} spaceName={spaceName || 'Unknown'} />
         </div>

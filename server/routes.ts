@@ -783,8 +783,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentIntentId: paymentIntent.id 
       });
     } catch (error: any) {
-      console.error("Payment intent error:", error);
-      res.status(500).json({ message: "Error creating payment intent: " + error.message });
+      console.error("Payment intent creation failed:", {
+        error: error.message,
+        code: error.code,
+        type: error.type,
+        requestId: error.request_id,
+        statusCode: error.statusCode,
+        amount: req.body.amount,
+        bookingId: req.body.bookingId
+      });
+      res.status(500).json({ 
+        message: "Error creating payment intent: " + error.message,
+        code: error.code || 'unknown_error'
+      });
     }
   });
 

@@ -454,12 +454,8 @@ const CheckoutForm = ({ booking, spaceName }: { booking: Booking; spaceName: str
                 onChange={(event) => {
                   console.log('Payment element changed:', {
                     complete: event.complete,
-                    empty: event.empty,
-                    error: event.error
+                    empty: event.empty
                   });
-                  if (event.error) {
-                    console.error('Payment element error:', event.error);
-                  }
                 }}
               />
             </div>

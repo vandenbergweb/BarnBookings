@@ -10,8 +10,6 @@ interface BundleCardProps {
 export default function BundleCard({ bundle }: BundleCardProps) {
   const getGradientClass = (bundleId: string) => {
     switch (bundleId) {
-      case "bundle1":
-        return "bg-gradient-to-r from-barn-navy to-barn-red";
       case "bundle2":
         return "bg-gradient-to-r from-barn-navy to-barn-red";
       case "bundle3":

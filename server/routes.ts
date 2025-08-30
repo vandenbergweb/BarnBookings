@@ -1089,14 +1089,14 @@ async function initializeData() {
       await db.insert(bundles).values([
         {
           id: "bundle2", 
-          name: "Bundle Option 2",
+          name: "Team Bundle 1",
           description: "Spaces A, B & C - Practice + batting cages",
           spaceIds: ["A", "B", "C"],
           hourlyRate: "120.00",
         },
         {
           id: "bundle3",
-          name: "Bundle Option 3", 
+          name: "Team Bundle 2", 
           description: "Entire Facility - Spaces A, B, C & D",
           spaceIds: ["A", "B", "C", "D"],
           hourlyRate: "200.00",

@@ -126,14 +126,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/logout', (req, res) => {
-    req.logout((err) => {
-      if (err) {
-        console.error('Logout error:', err);
-        return res.status(500).json({ message: 'Logout failed' });
-      }
-      res.json({ message: 'Logged out successfully' });
-    });
+  app.post('/api/auth/logout', (req: any, res) => {
+    try {
+      console.log('=== LOGOUT ENDPOINT CALLED ===');
+      console.log('Session ID:', req.sessionID);
+      console.log('User before logout:', req.user ? req.user.email : 'No user');
+      console.log('Is authenticated before logout:', req.isAuthenticated());
+      
+      req.logout((err: any) => {
+        if (err) {
+          console.error('Passport logout error:', err);
+          console.error('Error type:', typeof err);
+          console.error('Error message:', err.message || err);
+          console.error('Error stack:', err.stack);
+          return res.status(500).json({ 
+            message: 'Logout failed',
+            error: err.message || 'Unknown logout error'
+          });
+        }
+        
+        console.log('Passport logout successful, destroying session...');
+        
+        // Also destroy the session
+        req.session.destroy((sessionErr: any) => {
+          if (sessionErr) {
+            console.error('Session destruction error:', sessionErr);
+            // Still return success since passport logout worked
+          } else {
+            console.log('Session destroyed successfully');
+          }
+          
+          // Clear the session cookie
+          res.clearCookie('connect.sid');
+          console.log('Logout completed successfully');
+          res.json({ message: 'Logged out successfully' });
+        });
+      });
+    } catch (error) {
+      console.error('Critical logout error:', error);
+      res.status(500).json({ 
+        message: 'Critical logout error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   });
 
   // GET logout route for direct browser navigation

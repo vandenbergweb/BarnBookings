@@ -19,6 +19,7 @@ This is a React-based web application for "The Barn MI", a professional baseball
 - Integrated cancellation policy and liability waiver documents into checkout with digital signature requirement
 - **RESOLVED: Payment Processing Issues (August 30, 2025)**: Fixed critical payment processing errors caused by React Hooks violations and iframe redirect security issues. Payment system now fully operational with enhanced error handling and proper Stripe Elements configuration.
 - **RESOLVED: Pricing Cache Issues (August 30, 2025)**: Fixed deployed app showing stale pricing (Space B $25 vs correct $30) by implementing ultra-aggressive cache-busting solution: server-side no-cache headers with ETag/Last-Modified, client-side staleTime: 0 with triple-parameter URL cache-breaking (timestamp + random + version), and HTTP cache: "no-cache" for all pricing endpoints. Redeployment required for full effect.
+- **NEW: Admin Settings Management Interface (August 31, 2025)**: Created comprehensive settings page at /admin/settings allowing administrators to easily manage facility configuration without code changes. Features include: space pricing and details editing, bundle name and pricing updates, equipment list management, activate/deactivate spaces and bundles, real-time database updates with proper validation and audit logging. Eliminates need for direct database modifications or temporary API endpoints when facility requirements change.
 
 # User Preferences
 

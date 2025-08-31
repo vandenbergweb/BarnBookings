@@ -1255,6 +1255,89 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
     }
   });
 
+  // Update space (admin only)
+  app.put('/api/admin/spaces/:spaceId', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { spaceId } = req.params;
+      const updates = req.body;
+      
+      if (!spaceId) {
+        return res.status(400).json({ message: "Space ID is required" });
+      }
+
+      // Validate the space exists
+      const existingSpace = await storage.getSpace(spaceId);
+      if (!existingSpace) {
+        return res.status(404).json({ message: "Space not found" });
+      }
+
+      // Update space in database
+      const { db } = await import('./db.js');
+      const { spaces } = await import('../shared/schema.js');
+      const { eq } = await import('drizzle-orm');
+
+      const [updatedSpace] = await db
+        .update(spaces)
+        .set({
+          name: updates.name || existingSpace.name,
+          description: updates.description || existingSpace.description,
+          hourlyRate: updates.hourlyRate || existingSpace.hourlyRate,
+          equipment: updates.equipment || existingSpace.equipment,
+          isActive: updates.isActive !== undefined ? updates.isActive : existingSpace.isActive
+        })
+        .where(eq(spaces.id, spaceId))
+        .returning();
+
+      console.log(`Admin updated space: ${spaceId} by ${(req.user as any).email}`, updates);
+
+      res.json(updatedSpace);
+    } catch (error) {
+      console.error("Error updating space:", error);
+      res.status(500).json({ message: "Failed to update space" });
+    }
+  });
+
+  // Update bundle (admin only)
+  app.put('/api/admin/bundles/:bundleId', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { bundleId } = req.params;
+      const updates = req.body;
+      
+      if (!bundleId) {
+        return res.status(400).json({ message: "Bundle ID is required" });
+      }
+
+      // Validate the bundle exists
+      const existingBundle = await storage.getBundle(bundleId);
+      if (!existingBundle) {
+        return res.status(404).json({ message: "Bundle not found" });
+      }
+
+      // Update bundle in database
+      const { db } = await import('./db.js');
+      const { bundles } = await import('../shared/schema.js');
+      const { eq } = await import('drizzle-orm');
+
+      const [updatedBundle] = await db
+        .update(bundles)
+        .set({
+          name: updates.name || existingBundle.name,
+          description: updates.description || existingBundle.description,
+          hourlyRate: updates.hourlyRate || existingBundle.hourlyRate,
+          isActive: updates.isActive !== undefined ? updates.isActive : existingBundle.isActive
+        })
+        .where(eq(bundles.id, bundleId))
+        .returning();
+
+      console.log(`Admin updated bundle: ${bundleId} by ${(req.user as any).email}`, updates);
+
+      res.json(updatedBundle);
+    } catch (error) {
+      console.error("Error updating bundle:", error);
+      res.status(500).json({ message: "Failed to update bundle" });
+    }
+  });
+
   // Get all bookings (admin only)
   app.get('/api/admin/bookings', isAuthenticated, isAdmin, async (req, res) => {
     try {

@@ -17,6 +17,7 @@ import Dashboard from "@/pages/dashboard";
 import AdminPage from "@/pages/admin-simple";
 import AdminBookings from "@/pages/admin";
 import AdminUsers from "@/pages/admin-users";
+import AdminSettings from "@/pages/admin-settings";
 import AdminSetup from "@/pages/admin-setup";
 import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/admin" component={AdminPage} />
       <Route path="/admin/bookings" component={AdminBookings} />
       <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/setup" component={AdminSetup} />
       <Route path="/profile" component={Profile} />
       <Route component={NotFound} />

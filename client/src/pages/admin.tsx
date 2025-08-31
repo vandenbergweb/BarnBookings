@@ -171,15 +171,17 @@ function AdminContent() {
             </CardContent>
           </Card>
           
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardContent className="p-4 flex items-center space-x-3">
-              <Settings className="h-8 w-8 text-barn-navy" />
-              <div>
-                <h3 className="font-semibold">Settings</h3>
-                <p className="text-sm text-gray-600">Configure spaces & bundles</p>
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/admin/settings">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardContent className="p-4 flex items-center space-x-3">
+                <Settings className="h-8 w-8 text-barn-navy" />
+                <div>
+                  <h3 className="font-semibold">Settings</h3>
+                  <p className="text-sm text-gray-600">Configure spaces & bundles</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         <Tabs defaultValue="create-booking" className="w-full">

@@ -614,6 +614,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // TEMPORARY: Fix bundle names to shorter versions
+  app.get('/api/admin/fix-bundle-names', async (req, res) => {
+    try {
+      console.log('🔄 Fixing bundle names to shorter versions...');
+      
+      // Import database connection
+      const { db } = await import('./db.js');
+      const { bundles } = await import('../shared/schema.js');
+      const { eq } = await import('drizzle-orm');
+      
+      // Update Bundle 2 to shorter name
+      const [updatedBundle2] = await db
+        .update(bundles)
+        .set({ name: 'Team Bundle 1' })
+        .where(eq(bundles.id, 'bundle2'))
+        .returning();
+      
+      // Update Bundle 3 to shorter name  
+      const [updatedBundle3] = await db
+        .update(bundles)
+        .set({ name: 'Team Bundle 2' })
+        .where(eq(bundles.id, 'bundle3'))
+        .returning();
+      
+      const result = {
+        timestamp: new Date().toISOString(),
+        message: 'Bundle names fixed successfully!',
+        changes: {
+          bundle2: updatedBundle2,
+          bundle3: updatedBundle3
+        }
+      };
+      
+      console.log('✅ Bundle names fixed:', result);
+      
+      res.json(result);
+    } catch (error) {
+      console.error('❌ Bundle name fix failed:', error);
+      res.status(500).json({
+        message: 'Bundle name fix failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // TEMPORARY: Production data update endpoint
   app.get('/api/admin/update-production-data', async (req, res) => {
     try {
@@ -648,14 +694,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Rename Bundle 2
       const [updatedBundle2] = await db
         .update(bundles)
-        .set({ name: 'Team Bundle 1 - Spaces A, B & C - Practice + batting cages' })
+        .set({ name: 'Team Bundle 1' })
         .where(eq(bundles.id, 'bundle2'))
         .returning();
       
       // Rename Bundle 3
       const [updatedBundle3] = await db
         .update(bundles)
-        .set({ name: 'Team Bundle 2 - Entire Facility - Spaces A, B, C & D' })
+        .set({ name: 'Team Bundle 2' })
         .where(eq(bundles.id, 'bundle3'))
         .returning();
       

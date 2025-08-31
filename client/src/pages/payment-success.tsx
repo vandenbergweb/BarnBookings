@@ -163,8 +163,10 @@ export default function PaymentSuccess() {
                 <div className="text-sm">
                   <p className="font-medium text-barn-navy">What's Next?</p>
                   <p className="text-barn-gray">
-                    You'll receive a confirmation email shortly. Please arrive 10 minutes early 
-                    to check in and get set up.
+                    You'll receive a confirmation email shortly.
+                  </p>
+                  <p className="text-barn-gray mt-2 font-medium">
+                    Please arrive on time. No gum, sunflower seeds or collared drinks. Only use the space that you rented or you will be billed for the other space that was used.
                   </p>
                 </div>
               </div>

@@ -77,6 +77,31 @@ function AdminContent() {
     },
   });
 
+  // Cancel booking mutation (admin only)
+  const cancelBookingMutation = useMutation({
+    mutationFn: (bookingId: string) => apiRequest("DELETE", `/api/admin/bookings/${bookingId}`),
+    onSuccess: () => {
+      toast({
+        title: "Booking Cancelled",
+        description: "The booking has been successfully cancelled.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/bookings"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to cancel booking",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCancelBooking = (booking: any) => {
+    if (window.confirm(`Are you sure you want to cancel this booking for ${booking.customerName || booking.customerEmail}?\n\nDate: ${new Date(booking.startTime).toLocaleDateString()}\nTime: ${new Date(booking.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}\n\nThis action cannot be undone.`)) {
+      cancelBookingMutation.mutate(booking.id);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -322,7 +347,7 @@ function AdminContent() {
                 
                 return (
                   <div key={booking.id} className={`border rounded-lg p-4 ${isPast ? 'border-gray-300 bg-gray-50' : 'border-barn-gray/20 bg-white'}`}>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                       <div>
                         <p className="text-sm font-medium text-barn-navy">Customer</p>
                         <p className={`text-sm ${isPast ? 'text-gray-600' : 'text-barn-gray'}`} data-testid={`text-customer-${booking.id}`}>
@@ -356,6 +381,21 @@ function AdminContent() {
                           {booking.status}
                         </span>
                       </div>
+                      {!isPast && (
+                        <div>
+                          <p className="text-sm font-medium text-barn-navy">Actions</p>
+                          <Button 
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleCancelBooking(booking)}
+                            disabled={cancelBookingMutation.isPending}
+                            data-testid={`button-cancel-booking-${booking.id}`}
+                            className="text-xs"
+                          >
+                            {cancelBookingMutation.isPending ? "Cancelling..." : "Cancel"}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

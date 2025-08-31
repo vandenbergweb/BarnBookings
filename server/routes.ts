@@ -1204,6 +1204,57 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
     }
   });
 
+  // Cancel booking (admin only)
+  app.delete('/api/admin/bookings/:bookingId', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { bookingId } = req.params;
+      
+      if (!bookingId) {
+        return res.status(400).json({ message: "Booking ID is required" });
+      }
+
+      // Get the booking first to verify it exists
+      const booking = await storage.getBooking(bookingId);
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Check if booking is in the past
+      const now = new Date();
+      const bookingEnd = new Date(booking.endTime);
+      
+      if (bookingEnd < now) {
+        return res.status(400).json({ 
+          message: "Cannot cancel past bookings" 
+        });
+      }
+
+      // Update booking status to cancelled
+      const { db } = await import('./db.js');
+      const { bookings } = await import('../shared/schema.js');
+      const { eq } = await import('drizzle-orm');
+
+      const [cancelledBooking] = await db
+        .update(bookings)
+        .set({ 
+          status: 'cancelled'
+        })
+        .where(eq(bookings.id, bookingId))
+        .returning();
+
+      console.log(`Admin cancelled booking: ${bookingId} by admin ${(req.user as any).email}`);
+
+      res.json({ 
+        message: "Booking cancelled successfully",
+        booking: cancelledBooking
+      });
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      res.status(500).json({ message: "Failed to cancel booking" });
+    }
+  });
+
   // Get all bookings (admin only)
   app.get('/api/admin/bookings', isAuthenticated, isAdmin, async (req, res) => {
     try {

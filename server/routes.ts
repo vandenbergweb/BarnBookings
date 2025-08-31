@@ -589,7 +589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('ETag', `spaces-${Date.now()}-${Math.random()}`);
       res.setHeader('Last-Modified', new Date().toUTCString());
       res.setHeader('Vary', '*');
-      res.setHeader('X-Pricing-Version', '2025-08-30-v2'); // Force new deployment recognition
+      res.setHeader('X-Pricing-Version', '2025-08-31-v3-nuclear'); // Nuclear cache fix deployment
       
       // Force fresh database query with explicit logging
       console.log('=== SPACES API CALLED ===');

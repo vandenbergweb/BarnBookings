@@ -32,9 +32,10 @@ export const getQueryFn: <T>(options: {
     // Ultra-aggressive cache-busting for pricing-sensitive endpoints
     const url = queryKey.join("/") as string;
     const isPricingSensitive = url.includes("/spaces") || url.includes("/bundles");
-    // Add deployment timestamp to force cache invalidation
-    const deploymentVersion = "20250830-v2-pricing-fix";
-    const cacheBreaker = `t=${Date.now()}&r=${Math.random()}&v=${deploymentVersion}&_=${Date.now()}`;
+    // Nuclear cache-busting for persistent deployment caching
+    const deploymentVersion = "20250831-v3-nuclear-cache-fix";
+    const superUniqueId = `${Date.now()}-${Math.random()}-${performance.now()}`;
+    const cacheBreaker = `cache_buster=${superUniqueId}&t=${Date.now()}&r=${Math.random()}&v=${deploymentVersion}&_=${Date.now()}&force=${Math.floor(Math.random() * 999999)}`;
     const fetchUrl = isPricingSensitive ? `${url}?${cacheBreaker}` : url;
     
     const res = await fetch(fetchUrl, {

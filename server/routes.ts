@@ -614,6 +614,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // TEMPORARY: Production data update endpoint
+  app.get('/api/admin/update-production-data', async (req, res) => {
+    try {
+      console.log('🔄 Production data update requested via API');
+      
+      // Import database connection
+      const { db } = await import('./db.js');
+      const { spaces, bundles } = await import('../shared/schema.js');
+      const { eq } = await import('drizzle-orm');
+      
+      // Check current state
+      const currentSpaceB = await db.select().from(spaces).where(eq(spaces.id, 'B'));
+      const currentBundles = await db.select().from(bundles);
+      
+      console.log('Current Space B:', currentSpaceB[0]);
+      console.log('Current Bundles:', currentBundles);
+      
+      // Update Space B pricing to $30.00
+      const [updatedSpaceB] = await db
+        .update(spaces)
+        .set({ hourlyRate: 30.00 })
+        .where(eq(spaces.id, 'B'))
+        .returning();
+      
+      // Deactivate Bundle 1
+      const [updatedBundle1] = await db
+        .update(bundles)
+        .set({ isActive: false })
+        .where(eq(bundles.id, 'bundle1'))
+        .returning();
+      
+      // Rename Bundle 2
+      const [updatedBundle2] = await db
+        .update(bundles)
+        .set({ name: 'Team Bundle 1 - Spaces A, B & C - Practice + batting cages' })
+        .where(eq(bundles.id, 'bundle2'))
+        .returning();
+      
+      // Rename Bundle 3
+      const [updatedBundle3] = await db
+        .update(bundles)
+        .set({ name: 'Team Bundle 2 - Entire Facility - Spaces A, B, C & D' })
+        .where(eq(bundles.id, 'bundle3'))
+        .returning();
+      
+      const result = {
+        timestamp: new Date().toISOString(),
+        message: 'Production data updated successfully!',
+        changes: {
+          spaceB: updatedSpaceB,
+          bundle1: updatedBundle1,
+          bundle2: updatedBundle2,
+          bundle3: updatedBundle3
+        }
+      };
+      
+      console.log('✅ Production update completed:', result);
+      
+      res.json(result);
+    } catch (error) {
+      console.error('❌ Production update failed:', error);
+      res.status(500).json({
+        message: 'Production update failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Diagnostic endpoint for debugging cache issues
   app.get('/api/debug/pricing', async (req, res) => {
     try {

@@ -579,6 +579,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Diagnostic endpoint for debugging cache issues
+  app.get('/api/debug/pricing', async (req, res) => {
+    try {
+      // No auth required for debugging
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Content-Type', 'text/plain');
+      
+      console.log('=== PRICING DEBUG ENDPOINT CALLED ===');
+      const spaces = await storage.getSpaces();
+      const spaceB = spaces.find(s => s.id === 'B');
+      
+      const debugInfo = `
+PRICING DEBUG REPORT - ${new Date().toISOString()}
+Environment: ${process.env.NODE_ENV}
+Database URL exists: ${!!process.env.DATABASE_URL}
+Space B from database: ${spaceB ? JSON.stringify(spaceB, null, 2) : 'NOT FOUND'}
+All spaces: ${JSON.stringify(spaces, null, 2)}
+Request headers: ${JSON.stringify(req.headers, null, 2)}
+      `.trim();
+      
+      console.log(debugInfo);
+      res.send(debugInfo);
+    } catch (error) {
+      console.error('Debug endpoint error:', error);
+      res.status(500).send(`Debug endpoint error: ${error}`);
+    }
+  });
+
   // Spaces routes
   app.get('/api/spaces', async (req, res) => {
     try {
@@ -591,18 +619,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Vary', '*');
       res.setHeader('X-Pricing-Version', '2025-08-31-v3-nuclear'); // Nuclear cache fix deployment
       
-      // Force fresh database query with explicit logging
-      console.log('=== SPACES API CALLED ===');
+      // Ultra-detailed logging for deployed environment debugging
+      const timestamp = new Date().toISOString();
+      console.log(`\n=== SPACES API CALLED [${timestamp}] ===`);
       console.log('Environment:', process.env.NODE_ENV);
-      console.log('Request headers:', req.headers);
+      console.log('Database URL exists:', !!process.env.DATABASE_URL);
+      console.log('Database URL starts with:', process.env.DATABASE_URL?.substring(0, 20) + '...');
+      console.log('Request URL:', req.url);
+      console.log('Request query params:', req.query);
+      console.log('User Agent:', req.headers['user-agent']);
       
       const spaces = await storage.getSpaces();
-      console.log('RAW DATABASE SPACES:', spaces);
+      console.log('RAW DATABASE RESPONSE:', JSON.stringify(spaces, null, 2));
+      console.log('SPACE COUNT:', spaces.length);
       console.log('PRICING VERIFICATION:', spaces.map(s => `${s.name}: $${s.hourlyRate}`));
       
-      // Double-check Space B specifically
+      // Double-check Space B specifically with all details
       const spaceB = spaces.find(s => s.id === 'B');
-      console.log('SPACE B VERIFICATION:', spaceB ? `$${spaceB.hourlyRate}` : 'NOT FOUND');
+      if (spaceB) {
+        console.log('SPACE B FOUND WITH DETAILS:', JSON.stringify(spaceB, null, 2));
+        console.log('SPACE B PRICE TYPE:', typeof spaceB.hourlyRate);
+        console.log('SPACE B PRICE VALUE:', spaceB.hourlyRate);
+      } else {
+        console.log('SPACE B NOT FOUND IN DATABASE!');
+      }
+      
+      console.log(`=== END SPACES API LOG [${timestamp}] ===\n`);
       
       res.json(spaces);
     } catch (error) {

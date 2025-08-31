@@ -634,7 +634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update Space B pricing to $30.00
       const [updatedSpaceB] = await db
         .update(spaces)
-        .set({ hourlyRate: 30.00 })
+        .set({ hourlyRate: '30.00' })
         .where(eq(spaces.id, 'B'))
         .returning();
       

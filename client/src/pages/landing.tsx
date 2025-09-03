@@ -77,7 +77,7 @@ export default function Landing() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-barn-navy">Professional Equipment</h4>
-                    <p className="text-sm text-barn-gray">Hack Attack pitching machines, Hit Tracks, and complete training setups</p>
+                    <p className="text-sm text-barn-gray">Hack Attack pitching machines, HitTrax, and complete training setups</p>
                   </div>
                 </div>
               </CardContent>

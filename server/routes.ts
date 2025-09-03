@@ -1434,7 +1434,7 @@ async function initializeData() {
           name: "Space D",
           description: "12' x 70' Batting Cage", 
           dimensions: "12' x 70'",
-          equipment: "Includes batting tee, balls, L-screen, Hit Tracks and Hack Attack Elite Pitching Machine",
+          equipment: "Includes batting tee, balls, L-screen, HitTrax and Hack Attack Elite Pitching Machine",
           hourlyRate: "100.00",
         },
       ]);

@@ -31,15 +31,8 @@ export default function PaymentSuccess() {
   });
 
   // Send confirmation email when page loads
-  useEffect(() => {
-    if (bookingId && isAuthenticated && booking) {
-      // Trigger confirmation email
-      apiRequest("POST", "/api/send-confirmation-email", { bookingId })
-        .catch((error: any) => {
-          console.error("Error sending confirmation email:", error);
-        });
-    }
-  }, [bookingId, isAuthenticated, booking]);
+  // Note: Confirmation email is automatically sent by Stripe webhook
+  // when payment succeeds, so no need to trigger manually here
 
   const { data: spaces } = useQuery<Space[]>({
     queryKey: ["/api/spaces"],

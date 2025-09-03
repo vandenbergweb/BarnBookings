@@ -1093,9 +1093,10 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
     }
   });
 
-  // Manual confirmation email trigger (for payment success page)
+  // Manual confirmation email trigger (backup/fallback only - should rarely be used)
   app.post('/api/send-confirmation-email', isAuthenticated, async (req: any, res) => {
     try {
+      console.log('⚠️  MANUAL EMAIL TRIGGER: Manual confirmation email requested - this should be rare');
       const { bookingId } = req.body;
       const userId = req.user.id;
 

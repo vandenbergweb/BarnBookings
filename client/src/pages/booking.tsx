@@ -61,17 +61,7 @@ export default function BookingPage() {
     }
   }, [isAuthenticated, isLoading, toast, setLocation]);
 
-  // Adjust duration when selected time changes to prevent going past 9PM
-  useEffect(() => {
-    if (selectedTime) {
-      const [timeHours] = selectedTime.split(':').map(Number);
-      const maxDuration = 21 - timeHours; // 9PM = 21:00
-      
-      if (duration > maxDuration) {
-        setDuration(Math.max(1, maxDuration));
-      }
-    }
-  }, [selectedTime, duration]);
+
 
   // Scroll to top when page loads and ensure pre-selected items are handled
   useEffect(() => {
@@ -104,6 +94,47 @@ export default function BookingPage() {
     retry: false,
   });
 
+  // Helper function to check if a time period overlaps with existing bookings
+  const hasBookingConflict = (startTime: Date, endTime: Date) => {
+    if (!availability) return false;
+
+    return availability.some(booking => {
+      const bookingStart = new Date(booking.startTime);
+      const bookingEnd = new Date(booking.endTime);
+      
+      // Check if the space/bundle conflicts
+      const spaceConflict = selectedSpaceId && booking.spaceId === selectedSpaceId;
+      const bundleConflict = selectedBundleId && (
+        booking.bundleId === selectedBundleId ||
+        (selectedBundle && booking.spaceId && selectedBundle.spaceIds.includes(booking.spaceId))
+      );
+      
+      if (!spaceConflict && !bundleConflict) return false;
+      
+      // Check time overlap
+      return startTime < bookingEnd && endTime > bookingStart;
+    });
+  };
+
+  // Check if a specific duration is available for the selected time
+  const isDurationAvailable = (hours: number) => {
+    if (!selectedTime || !availability) return true;
+    
+    const [timeHours, minutes] = selectedTime.split(':').map(Number);
+    
+    // Check if this duration would extend past 9PM
+    const endHour = timeHours + hours;
+    if (endHour > 21) return false;
+    
+    const startTime = new Date(selectedDate);
+    startTime.setHours(timeHours, minutes, 0, 0);
+    
+    const endTime = new Date(startTime);
+    endTime.setHours(timeHours + hours, minutes, 0, 0);
+
+    return !hasBookingConflict(startTime, endTime);
+  };
+
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: BookingData) => {
       const response = await apiRequest("POST", "/api/bookings", bookingData);
@@ -127,6 +158,24 @@ export default function BookingPage() {
   const selectedSpace = spaces?.find(s => s.id === selectedSpaceId);
   const selectedBundle = bundles?.find(b => b.id === selectedBundleId);
   const selectedItem = selectedSpace || selectedBundle;
+
+  // Adjust duration when selected time changes to prevent going past 9PM or conflicts
+  useEffect(() => {
+    if (selectedTime) {
+      // Find the maximum valid duration for the selected time
+      let maxValidDuration = 0;
+      for (let hours = 1; hours <= 3; hours++) {
+        if (isDurationAvailable(hours)) {
+          maxValidDuration = hours;
+        }
+      }
+      
+      // If current duration is invalid, set to the maximum valid duration or 1
+      if (!isDurationAvailable(duration)) {
+        setDuration(Math.max(1, maxValidDuration));
+      }
+    }
+  }, [selectedTime, availability, selectedSpaceId, selectedBundleId]);
 
   const calculateTotal = () => {
     if (!selectedItem) return 0;
@@ -187,6 +236,16 @@ export default function BookingPage() {
       return;
     }
 
+    // Final check for booking conflicts before proceeding to payment
+    if (hasBookingConflict(startTime, endTime)) {
+      toast({
+        title: "Booking Conflict",
+        description: "This time slot conflicts with an existing booking. Please select a different time or duration.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const bookingData: BookingData = {
       spaceId: selectedSpaceId || undefined,
       bundleId: selectedBundleId || undefined,
@@ -227,22 +286,7 @@ export default function BookingPage() {
       return false;
     }
 
-    return !availability.some(booking => {
-      const bookingStart = new Date(booking.startTime);
-      const bookingEnd = new Date(booking.endTime);
-      
-      // Check if the space/bundle conflicts
-      const spaceConflict = selectedSpaceId && booking.spaceId === selectedSpaceId;
-      const bundleConflict = selectedBundleId && (
-        booking.bundleId === selectedBundleId ||
-        (selectedBundle && booking.spaceId && selectedBundle.spaceIds.includes(booking.spaceId))
-      );
-      
-      if (!spaceConflict && !bundleConflict) return false;
-      
-      // Check time overlap
-      return slotStart < bookingEnd && slotEnd > bookingStart;
-    });
+    return !hasBookingConflict(slotStart, slotEnd);
   };
 
   if (isLoading) {
@@ -392,15 +436,7 @@ export default function BookingPage() {
               <Label className="text-barn-navy font-semibold mb-3 block">Duration</Label>
               <div className="flex space-x-3">
                 {[1, 2, 3].map((hours) => {
-                  // Check if this duration would extend past 9PM
-                  const isDurationValid = () => {
-                    if (!selectedTime) return true;
-                    const [timeHours] = selectedTime.split(':').map(Number);
-                    const endHour = timeHours + hours;
-                    return endHour <= 21; // 9PM = 21:00
-                  };
-
-                  const isValid = isDurationValid();
+                  const isValid = isDurationAvailable(hours);
                   
                   return (
                     <Button
@@ -418,14 +454,31 @@ export default function BookingPage() {
                       data-testid={`button-duration-${hours}`}
                     >
                       {hours} Hour{hours > 1 ? 's' : ''}
+                      {!isValid && selectedTime && (
+                        <div className="text-xs ml-1">
+                          {(() => {
+                            const [timeHours] = selectedTime.split(':').map(Number);
+                            const endHour = timeHours + hours;
+                            if (endHour > 21) return "(past 9PM)";
+                            return "(conflict)";
+                          })()}
+                        </div>
+                      )}
                     </Button>
                   );
                 })}
               </div>
               {selectedTime && (
-                <p className="text-xs text-barn-gray mt-2">
-                  Bookings must end by 9:00 PM EST
-                </p>
+                <div className="mt-2">
+                  <p className="text-xs text-barn-gray">
+                    Bookings must end by 9:00 PM EST
+                  </p>
+                  {[2, 3].some(hours => !isDurationAvailable(hours)) && (
+                    <p className="text-xs text-barn-red mt-1">
+                      Some durations unavailable due to existing bookings or time restrictions
+                    </p>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>

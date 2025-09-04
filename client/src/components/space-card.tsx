@@ -1,13 +1,32 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { trackSpaceViewed, trackBookingStarted } from "@/lib/analytics";
 import type { Space } from "@shared/schema";
+import { useEffect } from "react";
 
 interface SpaceCardProps {
   space: Space;
 }
 
 export default function SpaceCard({ space }: SpaceCardProps) {
+  // Track space view when component mounts
+  useEffect(() => {
+    trackSpaceViewed({
+      spaceName: space.name,
+      spaceId: space.id,
+      pricePerHour: parseFloat(space.hourlyRate)
+    });
+  }, [space.name, space.id, space.hourlyRate]);
+  
+  const handleBookingStart = () => {
+    trackBookingStarted({
+      spaceName: space.name,
+      spaceId: space.id,
+      pricePerHour: parseFloat(space.hourlyRate)
+    });
+  };
+
   return (
     <Card className="shadow-md overflow-hidden">
       <CardContent className="p-4">
@@ -37,6 +56,7 @@ export default function SpaceCard({ space }: SpaceCardProps) {
             <Button 
               className="bg-barn-navy hover:bg-barn-navy/90 text-white px-4 py-2 rounded-lg text-sm font-medium"
               data-testid={`button-select-space-${space.id}`}
+              onClick={handleBookingStart}
             >
               Select
             </Button>

@@ -21,9 +21,13 @@ import AdminSettings from "@/pages/admin-settings";
 import AdminSetup from "@/pages/admin-setup";
 import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
+import { useAnalytics } from "@/hooks/use-analytics";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
+  
+  // Track page views automatically
+  useAnalytics();
 
   return (
     <Switch>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import type { Booking, Space, Bundle } from "@shared/schema";
+import { trackBookingCompleted, trackTransaction } from "@/lib/analytics";
 import baseballLogo from "@assets/Baseball Barn MI_1756584401549.png";
 
 export default function PaymentSuccess() {
@@ -90,13 +91,47 @@ export default function PaymentSuccess() {
 
   // Get space or bundle name
   let itemName = "Unknown";
+  let itemId = "unknown";
   if (booking.spaceId && spaces) {
     const space = spaces.find(s => s.id === booking.spaceId);
     itemName = space?.name || "Unknown Space";
+    itemId = booking.spaceId;
   } else if (booking.bundleId && bundles) {
     const bundle = bundles.find(b => b.id === booking.bundleId);
     itemName = bundle?.name || "Unknown Bundle";
+    itemId = booking.bundleId;
   }
+
+  // Track booking completion and transaction when booking data is loaded
+  useEffect(() => {
+    if (booking && spaces && (booking.spaceId || booking.bundleId)) {
+      // Calculate duration in hours
+      const startTime = new Date(booking.startTime);
+      const endTime = new Date(booking.endTime);
+      const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+      
+      // Track booking completion
+      trackBookingCompleted({
+        bookingId: booking.id,
+        spaceName: itemName,
+        spaceId: itemId,
+        duration,
+        totalAmount: parseFloat(booking.totalAmount),
+        startTime: booking.startTime.toString(),
+        userId: booking.userId
+      });
+      
+      // Track transaction
+      trackTransaction({
+        transactionId: booking.stripePaymentIntentId || booking.id,
+        bookingId: booking.id,
+        amount: parseFloat(booking.totalAmount),
+        paymentMethod: 'stripe',
+        spaceName: itemName,
+        spaceId: itemId
+      });
+    }
+  }, [booking, spaces, bundles, itemName, itemId]);
 
   return (
     <div className="min-h-screen bg-gray-50">

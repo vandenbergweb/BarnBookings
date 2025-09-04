@@ -1,4 +1,4 @@
-// GTM Analytics Utility for The Barn MI
+// Google Analytics 4 Utility for The Barn MI
 // Tracks bookings, transactions, and page views
 
 // Define the gtag function globally
@@ -14,22 +14,22 @@ if (typeof window !== 'undefined') {
   window.dataLayer = window.dataLayer || [];
 }
 
-// Push events to dataLayer
-export const gtmPush = (event: any) => {
-  if (typeof window !== 'undefined' && window.dataLayer) {
-    window.dataLayer.push(event);
-    console.log('GTM Event:', event);
+// Track events using gtag
+export const trackEvent = (eventName: string, parameters: any = {}) => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', eventName, parameters);
+    console.log('GA4 Event:', eventName, parameters);
   }
 };
 
 // Track page views
 export const trackPageView = (url: string, title?: string) => {
-  gtmPush({
-    event: 'page_view',
-    page_location: window.location.href,
-    page_path: url,
-    page_title: title || document.title
-  });
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('config', 'G-YC6H37BREH', {
+      page_path: url,
+      page_title: title || document.title
+    });
+  }
 };
 
 // Track booking completion
@@ -42,8 +42,7 @@ export const trackBookingCompleted = (bookingData: {
   startTime: string;
   userId?: string;
 }) => {
-  gtmPush({
-    event: 'booking_completed',
+  trackEvent('booking_completed', {
     booking_id: bookingData.bookingId,
     space_name: bookingData.spaceName,
     space_id: bookingData.spaceId,
@@ -63,8 +62,7 @@ export const trackTransaction = (transactionData: {
   spaceName: string;
   spaceId: string;
 }) => {
-  gtmPush({
-    event: 'purchase',
+  trackEvent('purchase', {
     transaction_id: transactionData.transactionId,
     booking_id: transactionData.bookingId,
     value: transactionData.amount,
@@ -86,8 +84,7 @@ export const trackBookingStarted = (spaceData: {
   spaceId: string;
   pricePerHour: number;
 }) => {
-  gtmPush({
-    event: 'booking_started',
+  trackEvent('booking_started', {
     space_name: spaceData.spaceName,
     space_id: spaceData.spaceId,
     price_per_hour: spaceData.pricePerHour
@@ -100,8 +97,7 @@ export const trackSpaceViewed = (spaceData: {
   spaceId: string;
   pricePerHour: number;
 }) => {
-  gtmPush({
-    event: 'space_viewed',
+  trackEvent('space_viewed', {
     space_name: spaceData.spaceName,
     space_id: spaceData.spaceId,
     price_per_hour: spaceData.pricePerHour
@@ -110,16 +106,14 @@ export const trackSpaceViewed = (spaceData: {
 
 // Track user registration
 export const trackUserRegistration = (userId?: string) => {
-  gtmPush({
-    event: 'user_registration',
+  trackEvent('sign_up', {
     user_id: userId
   });
 };
 
 // Track user login
 export const trackUserLogin = (userId?: string) => {
-  gtmPush({
-    event: 'user_login',
+  trackEvent('login', {
     user_id: userId
   });
 };

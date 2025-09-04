@@ -17,6 +17,12 @@ import { Users, Settings, Calendar } from "lucide-react";
 function AdminContent() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Time slots (matching customer interface)
+  const timeSlots = [
+    "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", 
+    "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"
+  ];
   
   // Form state for new booking
   const [formData, setFormData] = useState({
@@ -24,8 +30,9 @@ function AdminContent() {
     customerName: '',
     spaceId: '',
     bundleId: '',
-    startTime: '',
-    endTime: '',
+    selectedDate: '',
+    selectedTime: '',
+    duration: 1,
     totalAmount: '',
     paymentMethod: 'cash'
   });
@@ -61,8 +68,9 @@ function AdminContent() {
         customerName: '',
         spaceId: '',
         bundleId: '',
-        startTime: '',
-        endTime: '',
+        selectedDate: '',
+        selectedTime: '',
+        duration: 1,
         totalAmount: '',
         paymentMethod: 'cash'
       });
@@ -139,7 +147,7 @@ function AdminContent() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.customerEmail || !formData.startTime || !formData.endTime || !formData.totalAmount) {
+    if (!formData.customerEmail || !formData.selectedDate || !formData.selectedTime || !formData.totalAmount) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
@@ -157,11 +165,23 @@ function AdminContent() {
       return;
     }
 
+    // Construct start and end times from date + time + duration
+    const [hours, minutes] = formData.selectedTime.split(':').map(Number);
+    const startTime = new Date(formData.selectedDate);
+    startTime.setHours(hours, minutes, 0, 0);
+    
+    const endTime = new Date(startTime);
+    endTime.setHours(hours + formData.duration, minutes, 0, 0);
+
     createBookingMutation.mutate({
-      ...formData,
+      customerEmail: formData.customerEmail,
       customerName: formData.customerName || formData.customerEmail.split('@')[0],
       spaceId: formData.spaceId || undefined,
       bundleId: formData.bundleId || undefined,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      totalAmount: formData.totalAmount,
+      paymentMethod: formData.paymentMethod,
     });
   };
 
@@ -295,27 +315,54 @@ function AdminContent() {
                     </div>
 
                     <div>
-                      <Label htmlFor="startTime">Start Time *</Label>
+                      <Label htmlFor="selectedDate">Date *</Label>
                       <Input
-                        id="startTime"
-                        type="datetime-local"
-                        value={formData.startTime}
-                        onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
-                        data-testid="input-start-time"
+                        id="selectedDate"
+                        type="date"
+                        value={formData.selectedDate}
+                        onChange={(e) => setFormData(prev => ({ ...prev, selectedDate: e.target.value }))}
+                        data-testid="input-selected-date"
                         required
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="endTime">End Time *</Label>
-                      <Input
-                        id="endTime"
-                        type="datetime-local"
-                        value={formData.endTime}
-                        onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
-                        data-testid="input-end-time"
-                        required
-                      />
+                      <Label htmlFor="selectedTime">Start Time *</Label>
+                      <Select 
+                        value={formData.selectedTime} 
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, selectedTime: value }))}
+                      >
+                        <SelectTrigger data-testid="select-start-time">
+                          <SelectValue placeholder="Select time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {timeSlots.map((time) => (
+                            <SelectItem key={time} value={time}>
+                              {time === "12:00" ? "12:00 PM" : 
+                               parseInt(time.split(':')[0]) > 12 ? 
+                               `${parseInt(time.split(':')[0]) - 12}:00 PM` : 
+                               `${parseInt(time.split(':')[0])}:00 AM`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="duration">Duration *</Label>
+                      <Select 
+                        value={formData.duration.toString()} 
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, duration: parseInt(value) }))}
+                      >
+                        <SelectTrigger data-testid="select-duration">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 hour</SelectItem>
+                          <SelectItem value="2">2 hours</SelectItem>
+                          <SelectItem value="3">3 hours</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div>

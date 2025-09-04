@@ -89,12 +89,23 @@ export const bookings = pgTable("bookings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Blocked dates (admin can mark days unavailable)
+export const blockedDates = pgTable("blocked_dates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: varchar("date").notNull().unique(), // YYYY-MM-DD format
+  reason: text("reason").notNull(), // Holiday, Maintenance, etc.
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type Space = typeof spaces.$inferSelect;
 export type Bundle = typeof bundles.$inferSelect;
 export type Booking = typeof bookings.$inferSelect;
 export type InsertBooking = typeof bookings.$inferInsert;
+export type BlockedDate = typeof blockedDates.$inferSelect;
+export type InsertBlockedDate = typeof blockedDates.$inferInsert;
 
 export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,
@@ -118,6 +129,13 @@ export const insertUserSchema = createInsertSchema(users).pick({
   firstName: true,
   lastName: true,
 });
+
+export const insertBlockedDateSchema = createInsertSchema(blockedDates).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertBlockedDateRequest = z.infer<typeof insertBlockedDateSchema>;
 
 // Local authentication schemas
 export const registerSchema = z.object({

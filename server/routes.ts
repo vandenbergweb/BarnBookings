@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import passport from "passport";
 import { storage } from "./storage";
-import { registerSchema, loginSchema, passwordResetRequestSchema, passwordResetSchema, type RegisterRequest, type LoginRequest, type PasswordResetRequest, type PasswordReset } from "@shared/schema";
+import { registerSchema, loginSchema, passwordResetRequestSchema, passwordResetSchema, insertBlockedDateSchema, type RegisterRequest, type LoginRequest, type PasswordResetRequest, type PasswordReset, type InsertBlockedDateRequest } from "@shared/schema";
 import { setupAuth, isAuthenticated, validateSession } from "./localAuth";
 import { isAdmin } from "./adminAuth";
 import { insertBookingSchema } from "@shared/schema";
@@ -1388,6 +1388,110 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
     } catch (error) {
       console.error("Error sending reminders:", error);
       res.status(500).json({ message: "Failed to send reminders" });
+    }
+  });
+
+  // Get all blocked dates (public endpoint for checking availability)
+  app.get('/api/blocked-dates', async (req, res) => {
+    try {
+      const { db } = await import('./db.js');
+      const { blockedDates } = await import('../shared/schema.js');
+      
+      const blocked = await db
+        .select({
+          id: blockedDates.id,
+          date: blockedDates.date,
+          reason: blockedDates.reason,
+          createdAt: blockedDates.createdAt
+        })
+        .from(blockedDates)
+        .orderBy(blockedDates.date);
+      
+      res.json(blocked);
+    } catch (error) {
+      console.error("Error fetching blocked dates:", error);
+      res.status(500).json({ message: "Failed to fetch blocked dates" });
+    }
+  });
+
+  // Add blocked date (admin only)
+  app.post('/api/admin/blocked-dates', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const validatedData = insertBlockedDateSchema.parse(req.body);
+      
+      const { db } = await import('./db.js');
+      const { blockedDates } = await import('../shared/schema.js');
+      
+      // Check if date is already blocked
+      const { eq } = await import('drizzle-orm');
+      const existing = await db
+        .select()
+        .from(blockedDates)
+        .where(eq(blockedDates.date, validatedData.date))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        return res.status(400).json({ message: "Date is already blocked" });
+      }
+      
+      const [newBlockedDate] = await db
+        .insert(blockedDates)
+        .values({
+          date: validatedData.date,
+          reason: validatedData.reason,
+          createdBy: (req.user as any).id
+        })
+        .returning();
+      
+      console.log(`Admin blocked date: ${validatedData.date} - ${validatedData.reason} by ${(req.user as any).email}`);
+      
+      res.status(201).json(newBlockedDate);
+    } catch (error: any) {
+      console.error("Error adding blocked date:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Validation failed",
+          errors: error.errors
+        });
+      }
+      res.status(500).json({ message: "Failed to add blocked date" });
+    }
+  });
+
+  // Remove blocked date (admin only)
+  app.delete('/api/admin/blocked-dates/:id', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      if (!id) {
+        return res.status(400).json({ message: "Blocked date ID is required" });
+      }
+      
+      const { db } = await import('./db.js');
+      const { blockedDates } = await import('../shared/schema.js');
+      const { eq } = await import('drizzle-orm');
+      
+      // Check if blocked date exists
+      const existing = await db
+        .select()
+        .from(blockedDates)
+        .where(eq(blockedDates.id, id))
+        .limit(1);
+      
+      if (existing.length === 0) {
+        return res.status(404).json({ message: "Blocked date not found" });
+      }
+      
+      await db
+        .delete(blockedDates)
+        .where(eq(blockedDates.id, id));
+      
+      console.log(`Admin removed blocked date: ${existing[0].date} by ${(req.user as any).email}`);
+      
+      res.json({ message: "Blocked date removed successfully" });
+    } catch (error) {
+      console.error("Error removing blocked date:", error);
+      res.status(500).json({ message: "Failed to remove blocked date" });
     }
   });
 

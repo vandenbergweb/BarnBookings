@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import BookingCalendar from "@/components/booking-calendar";
 import Navigation from "@/components/navigation";
 import { apiRequest } from "@/lib/queryClient";
-import type { Space, Bundle, Booking } from "@shared/schema";
+import type { Space, Bundle, Booking, BlockedDate } from "@shared/schema";
 
 interface BookingData {
   spaceId?: string;
@@ -93,6 +93,19 @@ export default function BookingPage() {
     enabled: !!selectedDate,
     retry: false,
   });
+
+  const { data: blockedDates } = useQuery<BlockedDate[]>({
+    queryKey: ["/api/blocked-dates"],
+    retry: false,
+  });
+
+  // Helper function to check if a date is blocked
+  const isDateBlocked = (date: Date) => {
+    if (!blockedDates) return false;
+    
+    const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+    return blockedDates.some(blocked => blocked.date === dateString);
+  };
 
   // Helper function to check if a time period overlaps with existing bookings
   const hasBookingConflict = (startTime: Date, endTime: Date) => {
@@ -236,6 +249,17 @@ export default function BookingPage() {
       return;
     }
 
+    // Check if the selected date is blocked
+    if (isDateBlocked(selectedDate)) {
+      const blockedDate = blockedDates?.find(blocked => blocked.date === selectedDate.toISOString().split('T')[0]);
+      toast({
+        title: "Date Unavailable",
+        description: blockedDate ? `This date is unavailable: ${blockedDate.reason}` : "This date is not available for bookings.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Final check for booking conflicts before proceeding to payment
     if (hasBookingConflict(startTime, endTime)) {
       toast({
@@ -264,6 +288,11 @@ export default function BookingPage() {
 
   const isTimeSlotAvailable = (time: string) => {
     if (!availability) return true;
+    
+    // Check if the selected date is blocked
+    if (isDateBlocked(selectedDate)) {
+      return false;
+    }
     
     const [hours, minutes] = time.split(':').map(Number);
     const slotStart = new Date(selectedDate);

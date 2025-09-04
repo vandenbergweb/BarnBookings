@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from "wouter";
-import { ArrowLeft, Edit2, Save, X } from "lucide-react";
+import { ArrowLeft, Edit2, Save, X, Calendar, Trash2, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
-import type { Space, Bundle } from "@shared/schema";
+import type { Space, Bundle, BlockedDate } from "@shared/schema";
 import baseballLogo from "@assets/Baseball Barn MI_1756584401549.png";
 
 function AdminSettingsContent() {
@@ -20,6 +20,10 @@ function AdminSettingsContent() {
   
   const [editingSpace, setEditingSpace] = useState<string | null>(null);
   const [editingBundle, setEditingBundle] = useState<string | null>(null);
+  const [newBlockedDate, setNewBlockedDate] = useState({
+    date: '',
+    reason: ''
+  });
 
   // Fetch data with fresh loading
   const { data: spaces, isLoading: spacesLoading } = useQuery<Space[]>({
@@ -29,6 +33,11 @@ function AdminSettingsContent() {
 
   const { data: bundles, isLoading: bundlesLoading } = useQuery<Bundle[]>({
     queryKey: ["/api/bundles"],
+    staleTime: 0, // Always get fresh data
+  });
+
+  const { data: blockedDates, isLoading: blockedDatesLoading } = useQuery<BlockedDate[]>({
+    queryKey: ["/api/blocked-dates"],
     staleTime: 0, // Always get fresh data
   });
 
@@ -73,6 +82,74 @@ function AdminSettingsContent() {
       });
     },
   });
+
+  // Add blocked date mutation
+  const addBlockedDateMutation = useMutation({
+    mutationFn: (data: { date: string; reason: string }) => 
+      apiRequest("POST", "/api/admin/blocked-dates", data),
+    onSuccess: () => {
+      toast({
+        title: "Date Blocked", 
+        description: "Date has been marked as unavailable successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/blocked-dates"] });
+      setNewBlockedDate({ date: '', reason: '' });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to block date",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Remove blocked date mutation
+  const removeBlockedDateMutation = useMutation({
+    mutationFn: (id: string) => 
+      apiRequest("DELETE", `/api/admin/blocked-dates/${id}`),
+    onSuccess: () => {
+      toast({
+        title: "Date Unblocked", 
+        description: "Date is now available for booking!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/blocked-dates"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove blocked date",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Helper function to handle adding blocked date
+  const handleAddBlockedDate = () => {
+    if (!newBlockedDate.date || !newBlockedDate.reason.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in both date and reason fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    addBlockedDateMutation.mutate({
+      date: newBlockedDate.date,
+      reason: newBlockedDate.reason.trim()
+    });
+  };
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
   const SpaceEditForm = ({ space }: { space: Space }) => {
     const [formData, setFormData] = useState({
@@ -397,6 +474,108 @@ function AdminSettingsContent() {
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Blocked Dates Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Blocked Dates</CardTitle>
+            <p className="text-sm text-barn-gray">Mark specific dates as unavailable for bookings (holidays, maintenance, etc.)</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {/* Add Blocked Date Form */}
+              <div className="bg-barn-red/5 p-4 rounded-lg">
+                <h3 className="font-semibold text-barn-red mb-3 flex items-center">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Block a New Date
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="blocked-date">Date</Label>
+                    <Input
+                      id="blocked-date"
+                      type="date"
+                      value={newBlockedDate.date}
+                      onChange={(e) => setNewBlockedDate(prev => ({ ...prev, date: e.target.value }))}
+                      data-testid="input-blocked-date"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="blocked-reason">Reason</Label>
+                    <Input
+                      id="blocked-reason"
+                      placeholder="e.g., Holiday, Maintenance, Event"
+                      value={newBlockedDate.reason}
+                      onChange={(e) => setNewBlockedDate(prev => ({ ...prev, reason: e.target.value }))}
+                      data-testid="input-blocked-reason"
+                    />
+                  </div>
+                </div>
+                <Button 
+                  onClick={handleAddBlockedDate}
+                  disabled={addBlockedDateMutation.isPending || !newBlockedDate.date || !newBlockedDate.reason.trim()}
+                  className="mt-3"
+                  data-testid="button-add-blocked-date"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {addBlockedDateMutation.isPending ? "Adding..." : "Block Date"}
+                </Button>
+              </div>
+
+              {/* Blocked Dates List */}
+              <div>
+                <h3 className="font-semibold text-barn-navy mb-3">Currently Blocked Dates</h3>
+                {blockedDatesLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin w-8 h-8 border-4 border-barn-navy border-t-transparent rounded-full" />
+                  </div>
+                ) : blockedDates && blockedDates.length > 0 ? (
+                  <div className="space-y-2">
+                    {blockedDates
+                      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                      .map((blockedDate) => (
+                        <div
+                          key={blockedDate.id}
+                          className="flex items-center justify-between p-3 border rounded-lg bg-white"
+                          data-testid={`blocked-date-item-${blockedDate.id}`}
+                        >
+                          <div className="flex-1">
+                            <div className="font-medium text-barn-navy" data-testid={`text-blocked-date-${blockedDate.id}`}>
+                              {formatDate(blockedDate.date)}
+                            </div>
+                            <div className="text-sm text-barn-gray" data-testid={`text-blocked-reason-${blockedDate.id}`}>
+                              {blockedDate.reason}
+                            </div>
+                            <div className="text-xs text-barn-gray/70">
+                              Added {new Date(blockedDate.createdAt!).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeBlockedDateMutation.mutate(blockedDate.id!)}
+                            disabled={removeBlockedDateMutation.isPending}
+                            className="text-barn-red border-barn-red hover:bg-barn-red hover:text-white"
+                            data-testid={`button-remove-blocked-date-${blockedDate.id}`}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            {removeBlockedDateMutation.isPending ? "Removing..." : "Remove"}
+                          </Button>
+                        </div>
+                      ))
+                    }
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-barn-gray">
+                    <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>No dates are currently blocked</p>
+                    <p className="text-sm">Add a blocked date above to mark days unavailable for booking</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </main>

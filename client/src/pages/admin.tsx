@@ -96,8 +96,42 @@ function AdminContent() {
     },
   });
 
+  // Helper functions for consistent Eastern Time formatting
+  const formatDateEST = (date: Date) => {
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long',
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      timeZone: 'America/New_York'
+    });
+  };
+
+  const formatTimeEST = (date: Date) => {
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      timeZone: 'America/New_York',
+      timeZoneName: 'short'
+    });
+  };
+
+  const formatShortDateEST = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      timeZone: 'America/New_York'
+    });
+  };
+
+  const formatShortTimeEST = (date: Date) => {
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric', 
+      minute: '2-digit',
+      timeZone: 'America/New_York'
+    });
+  };
+
   const handleCancelBooking = (booking: any) => {
-    if (window.confirm(`Are you sure you want to cancel this booking for ${booking.customerName || booking.customerEmail}?\n\nDate: ${new Date(booking.startTime).toLocaleDateString()}\nTime: ${new Date(booking.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}\n\nThis action cannot be undone.`)) {
+    if (window.confirm(`Are you sure you want to cancel this booking for ${booking.customerName || booking.customerEmail}?\n\nDate: ${formatDateEST(new Date(booking.startTime))}\nTime: ${formatTimeEST(new Date(booking.startTime))}\n\nThis action cannot be undone.`)) {
       cancelBookingMutation.mutate(booking.id);
     }
   };
@@ -362,9 +396,8 @@ function AdminContent() {
                       <div>
                         <p className="text-sm font-medium text-barn-navy">Date & Time</p>
                         <p className={`text-sm ${isPast ? 'text-gray-600' : 'text-barn-gray'}`}>
-                          {startDate.toLocaleDateString()}<br/>
-                          {startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - 
-                          {endDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                          {formatShortDateEST(startDate)}<br/>
+                          {formatShortTimeEST(startDate)} - {formatShortTimeEST(endDate)} EST
                         </p>
                       </div>
                       <div>

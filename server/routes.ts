@@ -846,9 +846,11 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
       
       console.log(`Getting availability for date: ${date}`);
       
-      // Get all bookings for the entire day
-      const startOfDay = new Date(date + 'T00:00:00.000Z');
-      const endOfDay = new Date(date + 'T23:59:59.999Z');
+      // Get all bookings for the entire day in local timezone to match how bookings are created
+      // Parse date as local time to avoid timezone conversion issues
+      const [year, month, day] = date.split('-').map(Number);
+      const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+      const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
       
       const bookings = await storage.getBookingsForTimeRange(startOfDay, endOfDay);
       console.log(`Found ${bookings.length} bookings for ${date}`);

@@ -183,9 +183,11 @@ function AdminContent() {
     }
 
     // Check if selected date is blocked
-    const selectedDate = new Date(formData.selectedDate);
-    if (isDateBlocked(selectedDate)) {
-      const blockedDate = blockedDates?.find(blocked => blocked.date === selectedDate.toISOString().split('T')[0]);
+    // Use date string directly to avoid timezone conversion issues
+    const dateString = formData.selectedDate; // Already in YYYY-MM-DD format
+    const isBlocked = blockedDates?.some(blocked => blocked.date === dateString);
+    if (isBlocked) {
+      const blockedDate = blockedDates?.find(blocked => blocked.date === dateString);
       toast({
         title: "Date Unavailable",
         description: blockedDate ? `This date is unavailable: ${blockedDate.reason}` : "This date is not available for bookings.",
@@ -196,8 +198,12 @@ function AdminContent() {
 
     // Construct start and end times from date + time + duration
     const [hours, minutes] = formData.selectedTime.split(':').map(Number);
-    const startTime = new Date(formData.selectedDate);
-    startTime.setHours(hours, minutes, 0, 0);
+    
+    // Create date in local timezone to avoid UTC conversion issues
+    // Parse the date string (YYYY-MM-DD) and construct date in local timezone
+    const dateStr = formData.selectedDate; // "YYYY-MM-DD" format from date input
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const startTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
     
     const endTime = new Date(startTime);
     endTime.setHours(hours + formData.duration, minutes, 0, 0);

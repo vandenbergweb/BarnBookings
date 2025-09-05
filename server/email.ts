@@ -101,10 +101,10 @@ export async function sendBookingConfirmation(data: BookingConfirmationData): Pr
           <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin-bottom: 25px;">
             <h4 style="color: #92400e; margin: 0 0 10px 0; font-size: 16px;">Important Reminders</h4>
             <ul style="color: #92400e; margin: 0; padding-left: 20px;">
-              <li>Please arrive <strong>on time</strong>. No gum, sunflower seeds or collared drinks</li>
+              <li>Please arrive <strong>on time</strong>. No gum, sunflower seeds or colored drinks</li>
               <li>Only use the space that you rented or you will be billed for the other space that was used</li>
               <li>Bring your own water bottle and towel</li>
-              <li>Athletic attire and proper footwear required</li>
+              <li>Athletic attire and Tennis shoes or turf shoes NO Cleats!</li>
               <li>Contact us if you need to reschedule or cancel</li>
             </ul>
           </div>
@@ -140,10 +140,10 @@ BOOKING DETAILS:
 - Total Paid: $${totalAmount}
 
 IMPORTANT REMINDERS:
-- Please arrive on time. No gum, sunflower seeds or collared drinks
+- Please arrive on time. No gum, sunflower seeds or colored drinks
 - Only use the space that you rented or you will be billed for the other space that was used
 - Bring your own water bottle and towel
-- Athletic attire and proper footwear required
+- Athletic attire and Tennis shoes or turf shoes NO Cleats!
 - Contact us if you need to reschedule or cancel
 
 Questions? Contact us at:
@@ -240,10 +240,10 @@ export async function sendBookingReminder(data: BookingReminderData): Promise<bo
           <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin-bottom: 25px;">
             <h4 style="color: #92400e; margin: 0 0 10px 0; font-size: 16px;">Don't Forget:</h4>
             <ul style="color: #92400e; margin: 0; padding-left: 20px;">
-              <li>Please arrive <strong>on time</strong>. No gum, sunflower seeds or collared drinks</li>
+              <li>Please arrive <strong>on time</strong>. No gum, sunflower seeds or colored drinks</li>
               <li>Only use the space that you rented or you will be billed for the other space that was used</li>
               <li>Bring water bottle and towel</li>
-              <li>Wear athletic attire and proper footwear</li>
+              <li>Wear athletic attire and Tennis shoes or turf shoes NO Cleats!</li>
               <li>Contact us if you need to cancel or reschedule</li>
             </ul>
           </div>
@@ -277,10 +277,10 @@ SESSION DETAILS:
 - Time: ${formatTime(startTime)} - ${formatTime(endTime)}
 
 DON'T FORGET:
-- Please arrive on time. No gum, sunflower seeds or collared drinks
+- Please arrive on time. No gum, sunflower seeds or colored drinks
 - Only use the space that you rented or you will be billed for the other space that was used
 - Bring water bottle and towel
-- Wear athletic attire and proper footwear
+- Wear athletic attire and Tennis shoes or turf shoes NO Cleats!
 - Contact us if you need to cancel or reschedule
 
 Questions or need to reschedule?

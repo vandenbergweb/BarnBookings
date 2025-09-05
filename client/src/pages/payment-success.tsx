@@ -194,7 +194,7 @@ export default function PaymentSuccess() {
                     You'll receive a confirmation email shortly.
                   </p>
                   <p className="text-barn-gray mt-2 font-medium">
-                    Please arrive on time. No gum, sunflower seeds or collared drinks. Only use the space that you rented or you will be billed for the other space that was used.
+                    Please arrive on time. No gum, sunflower seeds or colored drinks. Only use the space that you rented or you will be billed for the other space that was used.
                   </p>
                 </div>
               </div>

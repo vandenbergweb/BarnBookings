@@ -133,6 +133,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const insertBlockedDateSchema = createInsertSchema(blockedDates).omit({
   id: true,
   createdAt: true,
+  createdBy: true,
 });
 
 export type InsertBlockedDateRequest = z.infer<typeof insertBlockedDateSchema>;

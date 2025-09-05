@@ -138,8 +138,12 @@ function AdminContent() {
   };
 
   const formatShortDateEST = (date: Date) => {
+    // Force the date to display in Eastern Time without timezone shifting
     return date.toLocaleDateString('en-US', {
-      timeZone: 'America/New_York'
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: 'numeric', 
+      day: 'numeric'
     });
   };
 

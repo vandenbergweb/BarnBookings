@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
-import type { Space, Bundle, Booking } from "@shared/schema";
+import type { Space, Bundle, Booking, BlockedDate } from "@shared/schema";
 import baseballLogo from "@assets/Baseball Barn MI_1756584401549.png";
 import { Link } from "wouter";
 import { Users, Settings, Calendar } from "lucide-react";
@@ -52,6 +52,11 @@ function AdminContent() {
 
   const { data: allBookings } = useQuery<Booking[]>({
     queryKey: ["/api/admin/bookings"],
+    retry: false,
+  });
+
+  const { data: blockedDates } = useQuery<BlockedDate[]>({
+    queryKey: ["/api/blocked-dates"],
     retry: false,
   });
 
@@ -103,6 +108,14 @@ function AdminContent() {
       });
     },
   });
+
+  // Helper function to check if a date is blocked
+  const isDateBlocked = (date: Date) => {
+    if (!blockedDates) return false;
+    
+    const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+    return blockedDates.some(blocked => blocked.date === dateString);
+  };
 
   // Helper functions for consistent Eastern Time formatting
   const formatDateEST = (date: Date) => {
@@ -160,6 +173,18 @@ function AdminContent() {
       toast({
         title: "Missing Selection",
         description: "Please select either a space or bundle",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if selected date is blocked
+    const selectedDate = new Date(formData.selectedDate);
+    if (isDateBlocked(selectedDate)) {
+      const blockedDate = blockedDates?.find(blocked => blocked.date === selectedDate.toISOString().split('T')[0]);
+      toast({
+        title: "Date Unavailable",
+        description: blockedDate ? `This date is unavailable: ${blockedDate.reason}` : "This date is not available for bookings.",
         variant: "destructive",
       });
       return;

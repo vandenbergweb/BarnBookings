@@ -1024,7 +1024,24 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
         return res.status(503).json({ message: "Stripe not configured" });
       }
 
-      const event = req.body;
+      const sig = req.headers['stripe-signature'];
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+      let event;
+      
+      // Verify webhook signature for security
+      if (webhookSecret && sig) {
+        try {
+          event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+        } catch (err: any) {
+          console.error('Webhook signature verification failed:', err.message);
+          return res.status(400).send(`Webhook Error: ${err.message}`);
+        }
+      } else {
+        // Fallback for development or if webhook secret not configured
+        console.warn('No webhook secret configured - using raw body (not recommended for production)');
+        event = req.body;
+      }
       
       // Handle the event
       switch (event.type) {

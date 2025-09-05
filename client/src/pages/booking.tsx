@@ -206,8 +206,12 @@ export default function BookingPage() {
     }
 
     const [hours, minutes] = selectedTime.split(':').map(Number);
-    const startTime = new Date(selectedDate);
-    startTime.setHours(hours, minutes, 0, 0);
+    
+    // Create date in local timezone to avoid UTC conversion issues
+    // Get YYYY-MM-DD format and parse it as local date
+    const dateStr = selectedDate.toISOString().split('T')[0]; // "YYYY-MM-DD"
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const startTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
     
     const endTime = new Date(startTime);
     endTime.setHours(hours + duration, minutes, 0, 0);

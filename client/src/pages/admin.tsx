@@ -453,9 +453,21 @@ function AdminContent() {
                 const endDate = new Date(booking.endTime);
                 const isPast = endDate < now;
                 
+                // Find the space or bundle name
+                const getReservationInfo = () => {
+                  if (booking.spaceId && spaces) {
+                    const space = spaces.find(s => s.id === booking.spaceId);
+                    return space ? space.name : 'Unknown Space';
+                  } else if (booking.bundleId && bundles) {
+                    const bundle = bundles.find(b => b.id === booking.bundleId);
+                    return bundle ? bundle.name : 'Unknown Bundle';
+                  }
+                  return 'Unknown';
+                };
+                
                 return (
                   <div key={booking.id} className={`border rounded-lg p-4 ${isPast ? 'border-gray-300 bg-gray-50' : 'border-barn-gray/20 bg-white'}`}>
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                       <div>
                         <p className="text-sm font-medium text-barn-navy">Customer</p>
                         <p className={`text-sm ${isPast ? 'text-gray-600' : 'text-barn-gray'}`} data-testid={`text-customer-${booking.id}`}>
@@ -470,6 +482,12 @@ function AdminContent() {
                         <p className={`text-sm ${isPast ? 'text-gray-600' : 'text-barn-gray'}`}>
                           {formatShortDateEST(startDate)}<br/>
                           {formatShortTimeEST(startDate)} - {formatShortTimeEST(endDate)} EST
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-barn-navy">Reserved</p>
+                        <p className={`text-sm ${isPast ? 'text-gray-600' : 'text-barn-gray'}`} data-testid={`text-reservation-${booking.id}`}>
+                          {getReservationInfo()}
                         </p>
                       </div>
                       <div>

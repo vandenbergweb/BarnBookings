@@ -30,12 +30,13 @@ export async function sendBookingConfirmation(data: BookingConfirmationData): Pr
     const { to, userName, spaceName, startTime, endTime, totalAmount, bookingId } = data;
     
     const formatDate = (date: Date) => {
-      return date.toLocaleDateString('en-US', { 
+      // Create a new date in Eastern Time to avoid timezone conversion issues
+      const easternDate = new Date(date.toLocaleString("en-US", {timeZone: "America/New_York"}));
+      return easternDate.toLocaleDateString('en-US', { 
         weekday: 'long',
         year: 'numeric', 
         month: 'long', 
-        day: 'numeric',
-        timeZone: 'America/New_York'
+        day: 'numeric'
       });
     };
 
@@ -173,12 +174,13 @@ export async function sendBookingReminder(data: BookingReminderData): Promise<bo
     const { to, userName, spaceName, startTime, endTime, totalAmount } = data;
     
     const formatDate = (date: Date) => {
-      return date.toLocaleDateString('en-US', { 
+      // Create a new date in Eastern Time to avoid timezone conversion issues
+      const easternDate = new Date(date.toLocaleString("en-US", {timeZone: "America/New_York"}));
+      return easternDate.toLocaleDateString('en-US', { 
         weekday: 'long',
         year: 'numeric', 
         month: 'long', 
-        day: 'numeric',
-        timeZone: 'America/New_York'
+        day: 'numeric'
       });
     };
 

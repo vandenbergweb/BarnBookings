@@ -122,13 +122,21 @@ export default function BookingPage() {
         (selectedBundle && booking.spaceId && selectedBundle.spaceIds.includes(booking.spaceId))
       );
       
-      // NEW: Check if selected space conflicts with an existing bundle booking
+      // Check if selected space conflicts with an existing bundle booking
       const spaceToBundleConflict = selectedSpaceId && booking.bundleId && (() => {
         const bookedBundle = bundles?.find(b => b.id === booking.bundleId);
         return bookedBundle && bookedBundle.spaceIds.includes(selectedSpaceId);
       })();
       
-      if (!spaceConflict && !bundleConflict && !spaceToBundleConflict) return false;
+      // NEW: Check if selected bundle conflicts with existing bundle (overlapping spaces)
+      const bundleToBundleConflict = selectedBundleId && booking.bundleId && selectedBundle && (() => {
+        const bookedBundle = bundles?.find(b => b.id === booking.bundleId);
+        if (!bookedBundle || booking.bundleId === selectedBundleId) return false;
+        // Check if any spaces overlap between the two bundles
+        return selectedBundle.spaceIds.some(spaceId => bookedBundle.spaceIds.includes(spaceId));
+      })();
+      
+      if (!spaceConflict && !bundleConflict && !spaceToBundleConflict && !bundleToBundleConflict) return false;
       
       // Check time overlap
       return startTime < bookingEnd && endTime > bookingStart;

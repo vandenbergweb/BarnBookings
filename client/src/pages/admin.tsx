@@ -208,16 +208,23 @@ function AdminContent() {
     const endTime = new Date(startTime);
     endTime.setHours(hours + formData.duration, minutes, 0, 0);
 
-    createBookingMutation.mutate({
+    const bookingData: any = {
       customerEmail: formData.customerEmail,
       customerName: formData.customerName || formData.customerEmail.split('@')[0],
-      spaceId: formData.spaceId || undefined,
-      bundleId: formData.bundleId || undefined,
       startTime: startTime.toISOString(),
       endTime: endTime.toISOString(),
       totalAmount: formData.totalAmount,
       paymentMethod: formData.paymentMethod,
-    });
+    };
+
+    // Only include spaceId OR bundleId, never both or empty strings
+    if (formData.spaceId) {
+      bookingData.spaceId = formData.spaceId;
+    } else if (formData.bundleId) {
+      bookingData.bundleId = formData.bundleId;
+    }
+
+    createBookingMutation.mutate(bookingData);
   };
 
   return (

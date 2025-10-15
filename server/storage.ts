@@ -195,6 +195,20 @@ export class DatabaseStorage implements IStorage {
           }
         }
 
+        // Bundle-to-bundle conflicts: check if two different bundles share any spaces
+        if (booking.bundleId && existingBooking.bundleId && booking.bundleId !== existingBooking.bundleId && newBookingBundle) {
+          const existingBundle = await this.getBundle(existingBooking.bundleId);
+          if (existingBundle) {
+            // Check if any spaces overlap between the two bundles
+            const hasOverlap = newBookingBundle.spaceIds.some(spaceId => 
+              existingBundle.spaceIds.includes(spaceId)
+            );
+            if (hasOverlap) {
+              return true;
+            }
+          }
+        }
+
         return false;
       })
     );

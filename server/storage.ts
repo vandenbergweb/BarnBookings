@@ -12,7 +12,7 @@ import {
   type InsertBooking,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, desc, asc } from "drizzle-orm";
+import { eq, and, gte, lte, lt, gt, desc, asc } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -298,8 +298,9 @@ export class DatabaseStorage implements IStorage {
           eq(bookings.status, "confirmed"),
           // Booking starts before our query ends AND booking ends after our query starts
           // This catches all overlapping scenarios
-          lte(bookings.startTime, endTime),
-          gte(bookings.endTime, startTime)
+          // Using < and > (not <= and >=) to allow adjacent bookings (one ends when another begins)
+          lt(bookings.startTime, endTime),
+          gt(bookings.endTime, startTime)
         )
       );
   }

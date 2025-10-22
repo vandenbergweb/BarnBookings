@@ -1217,7 +1217,8 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
         ...insertBookingSchema.parse({
           ...bookingData,
           userId: customer.id,
-          paymentMethod
+          paymentMethod,
+          status: 'confirmed' // Admin bookings are immediately confirmed (no payment needed)
         })
       });
 

@@ -81,7 +81,7 @@ export const bookings = pgTable("bookings", {
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time").notNull(),
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
-  status: varchar("status").notNull().default("confirmed"), // confirmed, cancelled, completed
+  status: varchar("status").notNull().default("pending"), // pending, confirmed, cancelled, completed, payment_failed, expired
   paymentMethod: varchar("payment_method").default("stripe"), // "stripe" or "cash" or "other"
   stripePaymentIntentId: varchar("stripe_payment_intent_id"),
   reminderSent: boolean("reminder_sent").default(false),

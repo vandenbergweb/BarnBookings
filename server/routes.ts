@@ -253,6 +253,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin password reset endpoint (admin only)
+  app.post('/api/admin/reset-user-password', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { email, newPassword } = req.body;
+      
+      if (!email || !newPassword) {
+        return res.status(400).json({ message: 'Email and new password are required' });
+      }
+      
+      // Validate password strength
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: 'Password must be at least 8 characters long' });
+      }
+      
+      // Find user
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
+      
+      // Update password
+      await storage.updateUserPassword(user.id, hashedPassword);
+      
+      console.log(`Admin password reset for user: ${email}`);
+      res.json({ message: 'Password reset successfully' });
+    } catch (error: any) {
+      console.error('Admin password reset error:', error);
+      res.status(500).json({ message: 'Failed to reset password' });
+    }
+  });
+
   // Emergency admin creation endpoint (only works if no admin exists)
   app.post('/api/create-admin-emergency', async (req, res) => {
     try {

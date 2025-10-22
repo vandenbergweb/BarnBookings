@@ -281,9 +281,10 @@ function AdminContent() {
         </div>
 
         <Tabs defaultValue="create-booking" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="create-booking" data-testid="tab-create-booking">Create Booking</TabsTrigger>
             <TabsTrigger value="view-bookings" data-testid="tab-view-bookings">All Bookings</TabsTrigger>
+            <TabsTrigger value="reset-password" data-testid="tab-reset-password">Reset Password</TabsTrigger>
           </TabsList>
 
           <TabsContent value="create-booking" className="space-y-6">
@@ -588,9 +589,109 @@ function AdminContent() {
               );
             })()}
           </TabsContent>
+
+          <TabsContent value="reset-password" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Reset User Password</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PasswordResetForm />
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
     </div>
+  );
+}
+
+function PasswordResetForm() {
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: (data: { email: string; newPassword: string }) => 
+      apiRequest("POST", "/api/admin/reset-user-password", data),
+    onSuccess: () => {
+      toast({
+        title: "Password Reset",
+        description: "User password has been reset successfully!",
+      });
+      setEmail('');
+      setNewPassword('');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reset password",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !newPassword) {
+      toast({
+        title: "Error",
+        description: "Email and new password are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 8 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    resetPasswordMutation.mutate({ email, newPassword });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
+      <div>
+        <Label htmlFor="reset-email">User Email</Label>
+        <Input
+          id="reset-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="user@example.com"
+          data-testid="input-reset-email"
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="new-password">New Password</Label>
+        <Input
+          id="new-password"
+          type="text"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          placeholder="At least 8 characters"
+          data-testid="input-new-password"
+          required
+        />
+        <p className="text-sm text-gray-500 mt-1">Minimum 8 characters</p>
+      </div>
+
+      <Button 
+        type="submit" 
+        disabled={resetPasswordMutation.isPending}
+        data-testid="button-reset-password"
+      >
+        {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
+      </Button>
+    </form>
   );
 }
 

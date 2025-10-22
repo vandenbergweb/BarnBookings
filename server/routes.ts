@@ -1052,10 +1052,21 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
           const bookingId = paymentIntent.metadata?.bookingId;
           
           if (bookingId) {
-            console.log(`Payment succeeded for booking ${bookingId}`);
-            
-            // Update booking status to confirmed
-            await storage.updateBookingStatus(bookingId, 'confirmed');
+            // Check current booking status before updating
+            const currentBooking = await storage.getBooking(bookingId);
+            if (currentBooking) {
+              console.log(`Payment succeeded for booking ${bookingId} (current status: ${currentBooking.status})`);
+              
+              // Handle race condition: if booking was expired by cleanup job but payment succeeded
+              if (currentBooking.status === 'expired') {
+                console.warn(`⚠️  RACE CONDITION DETECTED: Booking ${bookingId} was expired but payment succeeded. Recovering booking to confirmed status.`);
+              }
+              
+              // Update booking status to confirmed (even if it was expired)
+              await storage.updateBookingStatus(bookingId, 'confirmed');
+            } else {
+              console.error(`Payment succeeded for booking ${bookingId} but booking not found in database`);
+            }
             
             // Send confirmation email
             const booking = await storage.getBooking(bookingId);
@@ -1115,7 +1126,7 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
   // Cleanup endpoint for expired pending bookings
   app.post('/api/cleanup-expired-bookings', async (req: any, res) => {
     try {
-      const timeoutMinutes = req.body?.timeoutMinutes || 30;
+      const timeoutMinutes = req.body?.timeoutMinutes || 45;
       const expiredCount = await storage.expireOldPendingBookings(timeoutMinutes);
       res.json({ 
         message: `Cleanup completed successfully`,
@@ -1129,11 +1140,12 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
   });
 
   // Background job to automatically clean up expired pending bookings every 10 minutes
+  // Uses 45-minute timeout to allow for slow payment processing and reduce race conditions
   setInterval(async () => {
     try {
-      const expiredCount = await storage.expireOldPendingBookings(30);
+      const expiredCount = await storage.expireOldPendingBookings(45);
       if (expiredCount > 0) {
-        console.log(`Background cleanup: Expired ${expiredCount} pending bookings`);
+        console.log(`Background cleanup: Expired ${expiredCount} pending bookings older than 45 minutes`);
       }
     } catch (error) {
       console.error('Background cleanup error:', error);

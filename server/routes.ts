@@ -1112,6 +1112,34 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
     }
   });
 
+  // Cleanup endpoint for expired pending bookings
+  app.post('/api/cleanup-expired-bookings', async (req: any, res) => {
+    try {
+      const timeoutMinutes = req.body?.timeoutMinutes || 30;
+      const expiredCount = await storage.expireOldPendingBookings(timeoutMinutes);
+      res.json({ 
+        message: `Cleanup completed successfully`,
+        expiredCount,
+        timeoutMinutes
+      });
+    } catch (error: any) {
+      console.error('Error cleaning up expired bookings:', error);
+      res.status(500).json({ message: 'Failed to cleanup expired bookings' });
+    }
+  });
+
+  // Background job to automatically clean up expired pending bookings every 10 minutes
+  setInterval(async () => {
+    try {
+      const expiredCount = await storage.expireOldPendingBookings(30);
+      if (expiredCount > 0) {
+        console.log(`Background cleanup: Expired ${expiredCount} pending bookings`);
+      }
+    } catch (error) {
+      console.error('Background cleanup error:', error);
+    }
+  }, 10 * 60 * 1000); // Run every 10 minutes
+
   // Manual confirmation email trigger (backup/fallback only - should rarely be used)
   app.post('/api/send-confirmation-email', isAuthenticated, async (req: any, res) => {
     try {

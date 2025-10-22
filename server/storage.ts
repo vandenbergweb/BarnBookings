@@ -55,6 +55,7 @@ export interface IStorage {
   getBookingsForTimeRange(startTime: Date, endTime: Date): Promise<Booking[]>;
   getBookingsNeedingReminders(): Promise<Booking[]>;
   markReminderSent(bookingId: string): Promise<void>;
+  expireOldPendingBookings(timeoutMinutes: number): Promise<number>;
   
   // Password reset operations
   createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void>;
@@ -327,6 +328,25 @@ export class DatabaseStorage implements IStorage {
       .update(bookings)
       .set({ reminderSent: true, updatedAt: new Date() })
       .where(eq(bookings.id, bookingId));
+  }
+
+  async expireOldPendingBookings(timeoutMinutes: number = 30): Promise<number> {
+    const timeoutDate = new Date(Date.now() - timeoutMinutes * 60 * 1000);
+    
+    // Find and update pending bookings older than the timeout
+    const expiredBookings = await db
+      .update(bookings)
+      .set({ status: 'expired', updatedAt: new Date() })
+      .where(
+        and(
+          eq(bookings.status, 'pending'),
+          lte(bookings.createdAt, timeoutDate)
+        )
+      )
+      .returning();
+    
+    console.log(`Expired ${expiredBookings.length} pending bookings older than ${timeoutMinutes} minutes`);
+    return expiredBookings.length;
   }
 
   // Password reset operations

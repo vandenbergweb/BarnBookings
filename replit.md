@@ -2,7 +2,9 @@
 
 This is a React-based web application for "The Barn MI", a professional baseball training facility booking system located at 6090 W River Rd, Weidman MI 48893. The application allows users to browse available practice spaces and team bundle packages, make bookings, and manage their reservations. It features a mobile-first design with authentication, payment processing via Stripe, and email notifications with facility location information.
 
-## Recent Changes (August 2025)
+## Recent Changes (October 2025)
+- **NEW: Brand Update (October 30, 2025)**: Replaced logo and favicon throughout application with new "The Barn MI" branding (thebarnmi_1761853940046.png - barn with "32" and baseball with "MI"). Updated all pages including landing, home, login, register, admin, profile, settings, password reset, and payment success. Also updated favicon and Apple touch icon in index.html.
+- **NEW: Facility Video Tour (October 30, 2025)**: Added Vimeo-hosted facility tour video to landing page (https://vimeo.com/1132272565). Video appears between "Starting Rates" and "Location" sections with responsive 16:9 aspect ratio player, rounded corners, and professional styling.
 - Updated phone number throughout system to (517) 204-4747
 - Removed all booking cancellation functionality per new no-cancellation policy
 - Updated booking hours to 8AM-9PM EST with validation to prevent bookings past 9PM

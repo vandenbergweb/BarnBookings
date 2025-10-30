@@ -132,6 +132,23 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* Video Tour */}
+        <section className="p-4">
+          <h3 className="text-xl font-bold text-barn-navy mb-4">Facility Tour</h3>
+          <div className="rounded-xl overflow-hidden shadow-lg bg-gray-900">
+            <div className="relative" style={{ paddingBottom: '56.25%' }}>
+              <iframe
+                src="https://player.vimeo.com/video/1132272565?badge=0&autopause=0&player_id=0&app_id=58479"
+                className="absolute top-0 left-0 w-full h-full"
+                frameBorder="0"
+                allow="autoplay; fullscreen; picture-in-picture; clipboard-write"
+                title="The Barn MI Facility Tour"
+                data-testid="video-facility-tour"
+              ></iframe>
+            </div>
+          </div>
+        </section>
+
         {/* Location */}
         <section className="p-4">
           <h3 className="text-xl font-bold text-barn-navy mb-4">Location</h3>

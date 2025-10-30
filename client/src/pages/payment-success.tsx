@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import type { Booking, Space, Bundle } from "@shared/schema";
 import { trackBookingCompleted, trackTransaction } from "@/lib/analytics";
-import baseballLogo from "@assets/Baseball Barn MI_1756584401549.png";
+import baseballLogo from "@assets/thebarnmi_1761853940046.png";
 
 export default function PaymentSuccess() {
   const { isAuthenticated, isLoading } = useAuth();

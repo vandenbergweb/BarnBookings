@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import type { Space, Bundle, BlockedDate } from "@shared/schema";
-import baseballLogo from "@assets/Baseball Barn MI_1756584401549.png";
+import baseballLogo from "@assets/thebarnmi_1761853940046.png";
 
 function AdminSettingsContent() {
   const { toast } = useToast();

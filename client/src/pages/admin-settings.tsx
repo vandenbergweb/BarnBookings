@@ -616,6 +616,52 @@ function AdminSettingsContent() {
           </CardContent>
         </Card>
 
+        {/* Google Calendar Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Calendar className="w-5 h-5 mr-2 text-barn-green" />
+              Google Calendar
+            </CardTitle>
+            <p className="text-sm text-barn-gray">Sync bookings with your Google Calendar</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="bg-barn-green/5 p-4 rounded-lg">
+                <p className="text-sm text-barn-gray mb-4">
+                  Your Google Calendar (thebarnmi@gmail.com) is connected. New bookings are automatically added to the calendar, and cancelled bookings are removed.
+                </p>
+                <Button
+                  onClick={async () => {
+                    try {
+                      const response = await apiRequest("POST", "/api/admin/sync-calendar");
+                      const data = await response.json();
+                      toast({
+                        title: "Calendar Sync Complete",
+                        description: data.message || `Synced ${data.synced} bookings to Google Calendar`,
+                      });
+                    } catch (error: any) {
+                      toast({
+                        title: "Sync Failed",
+                        description: error.message || "Failed to sync calendar",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  variant="outline"
+                  data-testid="button-sync-calendar"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Sync Existing Bookings to Calendar
+                </Button>
+                <p className="text-xs text-barn-gray mt-2">
+                  Use this one-time button to push all existing future bookings to Google Calendar
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Blocked Dates Section */}
         <Card>
           <CardHeader>

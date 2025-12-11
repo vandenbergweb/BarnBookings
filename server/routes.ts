@@ -1709,6 +1709,67 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
     }
   });
 
+  // Sync all existing confirmed bookings to Google Calendar (one-time use)
+  app.post('/api/admin/sync-calendar', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const allBookings = await storage.getAllBookings();
+      const now = new Date();
+      
+      // Filter to only future confirmed bookings that don't already have a calendar event
+      const bookingsToSync = allBookings.filter(b => 
+        b.status === 'confirmed' && 
+        new Date(b.endTime) > now &&
+        !b.calendarEventId
+      );
+
+      let synced = 0;
+      let failed = 0;
+
+      for (const booking of bookingsToSync) {
+        try {
+          const user = await storage.getUser(booking.userId);
+          if (!user) continue;
+
+          let space = null;
+          let bundle = null;
+          if (booking.spaceId) {
+            space = await storage.getSpace(booking.spaceId);
+          } else if (booking.bundleId) {
+            bundle = await storage.getBundle(booking.bundleId);
+          }
+
+          const calendarEventId = await createBookingCalendarEvent(booking, user, space, bundle);
+          if (calendarEventId) {
+            await storage.updateBookingCalendarEventId(booking.id, calendarEventId);
+            synced++;
+            console.log(`Synced booking ${booking.id} to calendar: ${calendarEventId}`);
+          } else {
+            failed++;
+          }
+        } catch (err) {
+          console.error(`Failed to sync booking ${booking.id}:`, err);
+          failed++;
+        }
+      }
+
+      console.log(`Calendar sync completed by ${(req.user as any).email}: ${synced} synced, ${failed} failed`);
+      
+      res.json({ 
+        success: true, 
+        message: `Synced ${synced} bookings to Google Calendar`,
+        synced,
+        failed,
+        total: bookingsToSync.length
+      });
+    } catch (error: any) {
+      console.error("Error syncing calendar:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "Failed to sync calendar" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

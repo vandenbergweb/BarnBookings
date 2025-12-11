@@ -98,6 +98,21 @@ export const blockedDates = pgTable("blocked_dates", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Facility settings (operating hours and available days)
+export const facilitySettings = pgTable("facility_settings", {
+  id: varchar("id").primaryKey().default("default"), // Single row for settings
+  openingTime: integer("opening_time").notNull().default(8), // 8 = 8:00 AM (24-hour format)
+  closingTime: integer("closing_time").notNull().default(21), // 21 = 9:00 PM (24-hour format)
+  mondayOpen: boolean("monday_open").default(true),
+  tuesdayOpen: boolean("tuesday_open").default(true),
+  wednesdayOpen: boolean("wednesday_open").default(true),
+  thursdayOpen: boolean("thursday_open").default(true),
+  fridayOpen: boolean("friday_open").default(true),
+  saturdayOpen: boolean("saturday_open").default(true),
+  sundayOpen: boolean("sunday_open").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type Space = typeof spaces.$inferSelect;
@@ -106,6 +121,7 @@ export type Booking = typeof bookings.$inferSelect;
 export type InsertBooking = typeof bookings.$inferInsert;
 export type BlockedDate = typeof blockedDates.$inferSelect;
 export type InsertBlockedDate = typeof blockedDates.$inferInsert;
+export type FacilitySettings = typeof facilitySettings.$inferSelect;
 
 export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,

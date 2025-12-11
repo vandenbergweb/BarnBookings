@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import BookingCalendar from "@/components/booking-calendar";
 import Navigation from "@/components/navigation";
 import { apiRequest } from "@/lib/queryClient";
-import type { Space, Bundle, Booking, BlockedDate } from "@shared/schema";
+import type { Space, Bundle, Booking, BlockedDate, FacilitySettings } from "@shared/schema";
 
 interface BookingData {
   spaceId?: string;
@@ -99,12 +99,39 @@ export default function BookingPage() {
     retry: false,
   });
 
+  const { data: facilitySettings } = useQuery<FacilitySettings>({
+    queryKey: ["/api/facility-settings"],
+    retry: false,
+  });
+
+  // Default facility hours (fallback if settings not loaded)
+  const openingTime = facilitySettings?.openingTime ?? 8;
+  const closingTime = facilitySettings?.closingTime ?? 21;
+
   // Helper function to check if a date is blocked
   const isDateBlocked = (date: Date) => {
     if (!blockedDates) return false;
     
     const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD format
     return blockedDates.some(blocked => blocked.date === dateString);
+  };
+
+  // Helper function to check if a day of week is open
+  const isDayOpen = (date: Date) => {
+    if (!facilitySettings) return true; // Default to open if settings not loaded
+    
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const dayMap: Record<number, keyof FacilitySettings> = {
+      0: 'sundayOpen',
+      1: 'mondayOpen',
+      2: 'tuesdayOpen',
+      3: 'wednesdayOpen',
+      4: 'thursdayOpen',
+      5: 'fridayOpen',
+      6: 'saturdayOpen',
+    };
+    
+    return facilitySettings[dayMap[dayOfWeek]] as boolean;
   };
 
   // Helper function to check if a time period overlaps with existing bookings
@@ -149,9 +176,9 @@ export default function BookingPage() {
     
     const [timeHours, minutes] = selectedTime.split(':').map(Number);
     
-    // Check if this duration would extend past 9PM
+    // Check if this duration would extend past closing time
     const endHour = timeHours + hours;
-    if (endHour > 21) return false;
+    if (endHour > closingTime) return false;
     
     const startTime = new Date(selectedDate);
     startTime.setHours(timeHours, minutes, 0, 0);
@@ -263,11 +290,22 @@ export default function BookingPage() {
       return;
     }
 
-    // Validate booking doesn't end after 9PM EST (21:00)
-    if (endTime.getHours() > 21 || (endTime.getHours() === 21 && endTime.getMinutes() > 0)) {
+    // Validate booking doesn't end after closing time
+    if (endTime.getHours() > closingTime || (endTime.getHours() === closingTime && endTime.getMinutes() > 0)) {
+      const closingTimeDisplay = closingTime === 12 ? '12:00 PM' : closingTime > 12 ? `${closingTime - 12}:00 PM` : `${closingTime}:00 AM`;
       toast({
         title: "Booking Hours Restriction",
-        description: "Bookings cannot extend past 9:00 PM EST.",
+        description: `Bookings cannot extend past ${closingTimeDisplay} EST.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if the selected day is open
+    if (!isDayOpen(selectedDate)) {
+      toast({
+        title: "Day Unavailable",
+        description: "The facility is closed on this day of the week.",
         variant: "destructive",
       });
       return;
@@ -305,16 +343,22 @@ export default function BookingPage() {
     createBookingMutation.mutate(bookingData);
   };
 
-  const timeSlots = [
-    "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", 
-    "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"
-  ];
+  // Generate time slots dynamically based on facility settings
+  const timeSlots = Array.from(
+    { length: closingTime - openingTime },
+    (_, i) => `${String(openingTime + i).padStart(2, '0')}:00`
+  );
 
   const isTimeSlotAvailable = (time: string) => {
     if (!availability) return true;
     
     // Check if the selected date is blocked
     if (isDateBlocked(selectedDate)) {
+      return false;
+    }
+
+    // Check if the selected day is open
+    if (!isDayOpen(selectedDate)) {
       return false;
     }
     
@@ -325,8 +369,8 @@ export default function BookingPage() {
     const slotEnd = new Date(slotStart);
     slotEnd.setHours(hours + duration, minutes, 0, 0);
 
-    // Don't show time slots that would extend past 9PM EST
-    if (slotEnd.getHours() > 21 || (slotEnd.getHours() === 21 && slotEnd.getMinutes() > 0)) {
+    // Don't show time slots that would extend past closing time
+    if (slotEnd.getHours() > closingTime || (slotEnd.getHours() === closingTime && slotEnd.getMinutes() > 0)) {
       return false;
     }
 
@@ -428,7 +472,21 @@ export default function BookingPage() {
               <BookingCalendar
                 selectedDate={selectedDate}
                 onDateChange={setSelectedDate}
+                isDateDisabled={(date) => isDateBlocked(date) || !isDayOpen(date)}
               />
+              {facilitySettings && (
+                <p className="text-xs text-barn-gray mt-2">
+                  Facility is open: {[
+                    facilitySettings.mondayOpen && 'Mon',
+                    facilitySettings.tuesdayOpen && 'Tue',
+                    facilitySettings.wednesdayOpen && 'Wed',
+                    facilitySettings.thursdayOpen && 'Thu',
+                    facilitySettings.fridayOpen && 'Fri',
+                    facilitySettings.saturdayOpen && 'Sat',
+                    facilitySettings.sundayOpen && 'Sun',
+                  ].filter(Boolean).join(', ')}
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -471,7 +529,7 @@ export default function BookingPage() {
                           <div>
                             {timeFormatted}
                             <div className="text-xs">
-                              {time === '21:00' ? 'Closed' : 'Booked'}
+                              {!isDayOpen(selectedDate) ? 'Closed' : 'Booked'}
                             </div>
                           </div>
                         )}
@@ -512,7 +570,7 @@ export default function BookingPage() {
                           {(() => {
                             const [timeHours] = selectedTime.split(':').map(Number);
                             const endHour = timeHours + hours;
-                            if (endHour > 21) return "(past 9PM)";
+                            if (endHour > closingTime) return "(past closing)";
                             return "(conflict)";
                           })()}
                         </div>
@@ -524,7 +582,7 @@ export default function BookingPage() {
               {selectedTime && (
                 <div className="mt-2">
                   <p className="text-xs text-barn-gray">
-                    Bookings must end by 9:00 PM EST
+                    Bookings must end by {closingTime === 12 ? '12:00 PM' : closingTime > 12 ? `${closingTime - 12}:00 PM` : `${closingTime}:00 AM`} EST
                   </p>
                   {[2, 3].some(hours => !isDurationAvailable(hours)) && (
                     <p className="text-xs text-barn-red mt-1">

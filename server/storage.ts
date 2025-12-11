@@ -4,12 +4,14 @@ import {
   bundles,
   bookings,
   passwordResetTokens,
+  facilitySettings,
   type User,
   type UpsertUser,
   type Space,
   type Bundle,
   type Booking,
   type InsertBooking,
+  type FacilitySettings,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, lt, gt, desc, asc } from "drizzle-orm";
@@ -62,6 +64,10 @@ export interface IStorage {
   getPasswordResetToken(token: string): Promise<{ userId: string; expiresAt: Date; used: boolean } | undefined>;
   markPasswordResetTokenUsed(token: string): Promise<void>;
   updateUserPassword(userId: string, passwordHash: string): Promise<void>;
+  
+  // Facility settings operations
+  getFacilitySettings(): Promise<FacilitySettings>;
+  updateFacilitySettings(settings: Partial<FacilitySettings>): Promise<FacilitySettings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -383,6 +389,42 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({ passwordHash })
       .where(eq(users.id, userId));
+  }
+
+  // Facility settings operations
+  async getFacilitySettings(): Promise<FacilitySettings> {
+    const [settings] = await db.select().from(facilitySettings).where(eq(facilitySettings.id, 'default'));
+    
+    // If no settings exist, create default settings
+    if (!settings) {
+      const [newSettings] = await db
+        .insert(facilitySettings)
+        .values({
+          id: 'default',
+          openingTime: 8,
+          closingTime: 21,
+          mondayOpen: true,
+          tuesdayOpen: true,
+          wednesdayOpen: true,
+          thursdayOpen: true,
+          fridayOpen: true,
+          saturdayOpen: true,
+          sundayOpen: true,
+        })
+        .returning();
+      return newSettings;
+    }
+    
+    return settings;
+  }
+
+  async updateFacilitySettings(settings: Partial<FacilitySettings>): Promise<FacilitySettings> {
+    const [updated] = await db
+      .update(facilitySettings)
+      .set({ ...settings, updatedAt: new Date() })
+      .where(eq(facilitySettings.id, 'default'))
+      .returning();
+    return updated;
   }
 }
 

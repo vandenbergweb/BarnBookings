@@ -1589,6 +1589,65 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
     }
   });
 
+  // Get facility settings (public - needed for booking page)
+  app.get('/api/facility-settings', async (req, res) => {
+    try {
+      const settings = await storage.getFacilitySettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching facility settings:", error);
+      res.status(500).json({ message: "Failed to fetch facility settings" });
+    }
+  });
+
+  // Update facility settings (admin only)
+  app.put('/api/admin/facility-settings', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const {
+        openingTime,
+        closingTime,
+        mondayOpen,
+        tuesdayOpen,
+        wednesdayOpen,
+        thursdayOpen,
+        fridayOpen,
+        saturdayOpen,
+        sundayOpen
+      } = req.body;
+
+      // Validate times
+      if (openingTime !== undefined && (openingTime < 0 || openingTime > 23)) {
+        return res.status(400).json({ message: "Opening time must be between 0 and 23" });
+      }
+      if (closingTime !== undefined && (closingTime < 0 || closingTime > 23)) {
+        return res.status(400).json({ message: "Closing time must be between 0 and 23" });
+      }
+      if (openingTime !== undefined && closingTime !== undefined && openingTime >= closingTime) {
+        return res.status(400).json({ message: "Opening time must be before closing time" });
+      }
+
+      const updates: any = {};
+      if (openingTime !== undefined) updates.openingTime = openingTime;
+      if (closingTime !== undefined) updates.closingTime = closingTime;
+      if (mondayOpen !== undefined) updates.mondayOpen = mondayOpen;
+      if (tuesdayOpen !== undefined) updates.tuesdayOpen = tuesdayOpen;
+      if (wednesdayOpen !== undefined) updates.wednesdayOpen = wednesdayOpen;
+      if (thursdayOpen !== undefined) updates.thursdayOpen = thursdayOpen;
+      if (fridayOpen !== undefined) updates.fridayOpen = fridayOpen;
+      if (saturdayOpen !== undefined) updates.saturdayOpen = saturdayOpen;
+      if (sundayOpen !== undefined) updates.sundayOpen = sundayOpen;
+
+      const updatedSettings = await storage.updateFacilitySettings(updates);
+      
+      console.log(`Admin updated facility settings by ${(req.user as any).email}:`, updates);
+      
+      res.json(updatedSettings);
+    } catch (error) {
+      console.error("Error updating facility settings:", error);
+      res.status(500).json({ message: "Failed to update facility settings" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -8,6 +8,7 @@ import { setupAuth, isAuthenticated, validateSession } from "./localAuth";
 import { isAdmin } from "./adminAuth";
 import { insertBookingSchema } from "@shared/schema";
 import { sendBookingConfirmation, sendBookingReminder, sendPasswordResetEmail } from "./email";
+import { createBookingCalendarEvent, testCalendarConnection } from "./googleCalendar";
 import { nanoid } from "nanoid";
 import bcrypt from "bcryptjs";
 
@@ -1131,6 +1132,24 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
                 } else {
                   console.error(`Failed to send confirmation email for booking ${bookingId}`);
                 }
+
+                // Create Google Calendar event for confirmed booking
+                try {
+                  let space = null;
+                  let bundle = null;
+                  if (booking.spaceId) {
+                    space = await storage.getSpace(booking.spaceId);
+                  } else if (booking.bundleId) {
+                    bundle = await storage.getBundle(booking.bundleId);
+                  }
+                  
+                  const calendarEventId = await createBookingCalendarEvent(booking, user, space, bundle);
+                  if (calendarEventId) {
+                    console.log(`Google Calendar event created for booking ${bookingId}: ${calendarEventId}`);
+                  }
+                } catch (calendarError) {
+                  console.error(`Failed to create Google Calendar event for booking ${bookingId}:`, calendarError);
+                }
               }
             }
           }
@@ -1271,16 +1290,17 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
       console.log(`Admin booking created: ${booking.id} for ${customerEmail} (${paymentMethod} payment)`);
 
       // Send confirmation email if customer has email
-      if (customer?.email) {
-        let spaceName = 'Unknown Space';
-        if (booking.spaceId) {
-          const space = await storage.getSpace(booking.spaceId);
-          spaceName = space?.name || 'Unknown Space';
-        } else if (booking.bundleId) {
-          const bundle = await storage.getBundle(booking.bundleId);
-          spaceName = bundle?.name || 'Unknown Bundle';
-        }
+      let space = null;
+      let bundle = null;
+      if (booking.spaceId) {
+        space = await storage.getSpace(booking.spaceId);
+      } else if (booking.bundleId) {
+        bundle = await storage.getBundle(booking.bundleId);
+      }
+      
+      const spaceName = space?.name || bundle?.name || 'Unknown Space';
 
+      if (customer?.email) {
         await sendBookingConfirmation({
           to: customer.email,
           userName: customer.firstName || 'Valued Customer',
@@ -1290,6 +1310,16 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
           totalAmount: booking.totalAmount,
           bookingId: booking.id,
         });
+      }
+
+      // Create Google Calendar event for admin booking
+      try {
+        const calendarEventId = await createBookingCalendarEvent(booking, customer, space, bundle);
+        if (calendarEventId) {
+          console.log(`Google Calendar event created for admin booking ${booking.id}: ${calendarEventId}`);
+        }
+      } catch (calendarError) {
+        console.error(`Failed to create Google Calendar event for admin booking ${booking.id}:`, calendarError);
       }
 
       res.json(booking);
@@ -1645,6 +1675,20 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
     } catch (error) {
       console.error("Error updating facility settings:", error);
       res.status(500).json({ message: "Failed to update facility settings" });
+    }
+  });
+
+  // Test Google Calendar connection (admin only)
+  app.get('/api/admin/test-calendar', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const result = await testCalendarConnection();
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error testing Google Calendar connection:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "Failed to test Google Calendar connection" 
+      });
     }
   });
 

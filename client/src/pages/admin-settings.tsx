@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from "wouter";
-import { ArrowLeft, Edit2, Save, X, Calendar, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Edit2, Save, X, Calendar, Trash2, Plus, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
-import type { Space, Bundle, BlockedDate } from "@shared/schema";
+import type { Space, Bundle, BlockedDate, FacilitySettings } from "@shared/schema";
 import baseballLogo from "@assets/thebarnmi_1761853940046.png";
 
 function AdminSettingsContent() {
@@ -39,6 +40,31 @@ function AdminSettingsContent() {
   const { data: blockedDates, isLoading: blockedDatesLoading } = useQuery<BlockedDate[]>({
     queryKey: ["/api/blocked-dates"],
     staleTime: 0, // Always get fresh data
+  });
+
+  const { data: facilitySettings, isLoading: facilitySettingsLoading } = useQuery<FacilitySettings>({
+    queryKey: ["/api/facility-settings"],
+    staleTime: 0, // Always get fresh data
+  });
+
+  // Update facility settings mutation
+  const updateFacilitySettingsMutation = useMutation({
+    mutationFn: (updates: Partial<FacilitySettings>) => 
+      apiRequest("PUT", "/api/admin/facility-settings", updates),
+    onSuccess: () => {
+      toast({
+        title: "Settings Updated",
+        description: "Facility hours have been updated successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/facility-settings"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update facility settings",
+        variant: "destructive",
+      });
+    },
   });
 
   // Update space mutation
@@ -476,6 +502,115 @@ function AdminSettingsContent() {
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Facility Hours Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Clock className="w-5 h-5 mr-2" />
+              Facility Hours
+            </CardTitle>
+            <p className="text-sm text-barn-gray">Set operating hours and available days of the week</p>
+          </CardHeader>
+          <CardContent>
+            {facilitySettingsLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin w-8 h-8 border-4 border-barn-navy border-t-transparent rounded-full" />
+              </div>
+            ) : facilitySettings ? (
+              <div className="space-y-6">
+                {/* Operating Hours */}
+                <div className="bg-barn-navy/5 p-4 rounded-lg">
+                  <h3 className="font-semibold text-barn-navy mb-4">Operating Hours</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="opening-time">Opening Time</Label>
+                      <Select
+                        value={String(facilitySettings.openingTime)}
+                        onValueChange={(value) => {
+                          updateFacilitySettingsMutation.mutate({ openingTime: parseInt(value) });
+                        }}
+                      >
+                        <SelectTrigger data-testid="select-opening-time">
+                          <SelectValue placeholder="Select opening time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 16 }, (_, i) => i + 5).map((hour) => (
+                            <SelectItem key={hour} value={String(hour)}>
+                              {hour === 0 ? '12:00 AM' : hour < 12 ? `${hour}:00 AM` : hour === 12 ? '12:00 PM' : `${hour - 12}:00 PM`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="closing-time">Closing Time</Label>
+                      <Select
+                        value={String(facilitySettings.closingTime)}
+                        onValueChange={(value) => {
+                          updateFacilitySettingsMutation.mutate({ closingTime: parseInt(value) });
+                        }}
+                      >
+                        <SelectTrigger data-testid="select-closing-time">
+                          <SelectValue placeholder="Select closing time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 16 }, (_, i) => i + 9).map((hour) => (
+                            <SelectItem key={hour} value={String(hour)}>
+                              {hour === 12 ? '12:00 PM' : hour < 12 ? `${hour}:00 AM` : hour > 12 && hour < 24 ? `${hour - 12}:00 PM` : '12:00 AM'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <p className="text-xs text-barn-gray mt-2">
+                    Current hours: {facilitySettings.openingTime < 12 ? `${facilitySettings.openingTime}:00 AM` : facilitySettings.openingTime === 12 ? '12:00 PM' : `${facilitySettings.openingTime - 12}:00 PM`} - {facilitySettings.closingTime < 12 ? `${facilitySettings.closingTime}:00 AM` : facilitySettings.closingTime === 12 ? '12:00 PM' : `${facilitySettings.closingTime - 12}:00 PM`}
+                  </p>
+                </div>
+
+                {/* Days of Week */}
+                <div className="bg-barn-green/5 p-4 rounded-lg">
+                  <h3 className="font-semibold text-barn-green mb-4">Available Days</h3>
+                  <p className="text-sm text-barn-gray mb-4">Toggle which days the facility is open for bookings</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { key: 'mondayOpen', label: 'Monday' },
+                      { key: 'tuesdayOpen', label: 'Tuesday' },
+                      { key: 'wednesdayOpen', label: 'Wednesday' },
+                      { key: 'thursdayOpen', label: 'Thursday' },
+                      { key: 'fridayOpen', label: 'Friday' },
+                      { key: 'saturdayOpen', label: 'Saturday' },
+                      { key: 'sundayOpen', label: 'Sunday' },
+                    ].map(({ key, label }) => (
+                      <div key={key} className="flex items-center space-x-2 bg-white p-3 rounded-lg border">
+                        <Switch
+                          id={key}
+                          checked={facilitySettings[key as keyof FacilitySettings] as boolean}
+                          onCheckedChange={(checked) => {
+                            updateFacilitySettingsMutation.mutate({ [key]: checked });
+                          }}
+                          data-testid={`switch-${key}`}
+                        />
+                        <Label htmlFor={key} className="cursor-pointer">{label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {updateFacilitySettingsMutation.isPending && (
+                  <div className="text-center text-barn-gray text-sm">
+                    Saving changes...
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-barn-gray">
+                Failed to load facility settings
               </div>
             )}
           </CardContent>

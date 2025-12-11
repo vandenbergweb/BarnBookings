@@ -8,7 +8,7 @@ import { setupAuth, isAuthenticated, validateSession } from "./localAuth";
 import { isAdmin } from "./adminAuth";
 import { insertBookingSchema } from "@shared/schema";
 import { sendBookingConfirmation, sendBookingReminder, sendPasswordResetEmail } from "./email";
-import { createBookingCalendarEvent, testCalendarConnection } from "./googleCalendar";
+import { createBookingCalendarEvent, testCalendarConnection, deleteCalendarEvent } from "./googleCalendar";
 import { nanoid } from "nanoid";
 import bcrypt from "bcryptjs";
 
@@ -1146,6 +1146,8 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
                   const calendarEventId = await createBookingCalendarEvent(booking, user, space, bundle);
                   if (calendarEventId) {
                     console.log(`Google Calendar event created for booking ${bookingId}: ${calendarEventId}`);
+                    // Save the calendar event ID to the booking for later deletion if cancelled
+                    await storage.updateBookingCalendarEventId(bookingId, calendarEventId);
                   }
                 } catch (calendarError) {
                   console.error(`Failed to create Google Calendar event for booking ${bookingId}:`, calendarError);
@@ -1317,6 +1319,8 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
         const calendarEventId = await createBookingCalendarEvent(booking, customer, space, bundle);
         if (calendarEventId) {
           console.log(`Google Calendar event created for admin booking ${booking.id}: ${calendarEventId}`);
+          // Save the calendar event ID to the booking for later deletion if cancelled
+          await storage.updateBookingCalendarEventId(booking.id, calendarEventId);
         }
       } catch (calendarError) {
         console.error(`Failed to create Google Calendar event for admin booking ${booking.id}:`, calendarError);
@@ -1355,6 +1359,18 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
         });
       }
 
+      // Delete Google Calendar event if it exists
+      if (booking.calendarEventId) {
+        try {
+          const deleted = await deleteCalendarEvent(booking.calendarEventId);
+          if (deleted) {
+            console.log(`Google Calendar event deleted for cancelled booking: ${bookingId}`);
+          }
+        } catch (calendarError) {
+          console.error(`Failed to delete Google Calendar event for booking ${bookingId}:`, calendarError);
+        }
+      }
+
       // Update booking status to cancelled
       const { db } = await import('./db.js');
       const { bookings } = await import('../shared/schema.js');
@@ -1363,7 +1379,8 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
       const [cancelledBooking] = await db
         .update(bookings)
         .set({ 
-          status: 'cancelled'
+          status: 'cancelled',
+          calendarEventId: null // Clear the calendar event ID
         })
         .where(eq(bookings.id, bookingId))
         .returning();

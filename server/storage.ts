@@ -54,6 +54,7 @@ export interface IStorage {
   getBooking(id: string): Promise<Booking | undefined>;
   updateBookingStatus(id: string, status: string): Promise<Booking>;
   updateBookingPayment(id: string, paymentIntentId: string): Promise<Booking>;
+  updateBookingCalendarEventId(id: string, calendarEventId: string): Promise<Booking>;
   getBookingsForTimeRange(startTime: Date, endTime: Date): Promise<Booking[]>;
   getBookingsNeedingReminders(): Promise<Booking[]>;
   markReminderSent(bookingId: string): Promise<void>;
@@ -256,6 +257,7 @@ export class DatabaseStorage implements IStorage {
         status: bookings.status,
         paymentMethod: bookings.paymentMethod,
         stripePaymentIntentId: bookings.stripePaymentIntentId,
+        calendarEventId: bookings.calendarEventId,
         reminderSent: bookings.reminderSent,
         createdAt: bookings.createdAt,
         updatedAt: bookings.updatedAt,
@@ -290,6 +292,15 @@ export class DatabaseStorage implements IStorage {
     const [booking] = await db
       .update(bookings)
       .set({ stripePaymentIntentId: paymentIntentId, updatedAt: new Date() })
+      .where(eq(bookings.id, id))
+      .returning();
+    return booking;
+  }
+
+  async updateBookingCalendarEventId(id: string, calendarEventId: string): Promise<Booking> {
+    const [booking] = await db
+      .update(bookings)
+      .set({ calendarEventId, updatedAt: new Date() })
       .where(eq(bookings.id, id))
       .returning();
     return booking;

@@ -84,6 +84,7 @@ export const bookings = pgTable("bookings", {
   status: varchar("status").notNull().default("pending"), // pending, confirmed, cancelled, completed, payment_failed, expired
   paymentMethod: varchar("payment_method").default("stripe"), // "stripe" or "cash" or "other"
   stripePaymentIntentId: varchar("stripe_payment_intent_id"),
+  calendarEventId: varchar("calendar_event_id"), // Google Calendar event ID for deletion on cancel
   reminderSent: boolean("reminder_sent").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

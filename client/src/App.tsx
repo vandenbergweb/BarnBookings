@@ -20,6 +20,7 @@ import AdminUsers from "@/pages/admin-users";
 import AdminSettings from "@/pages/admin-settings";
 import AdminSetup from "@/pages/admin-setup";
 import Profile from "@/pages/profile";
+import PrivacyPolicy from "@/pages/privacy-policy";
 import NotFound from "@/pages/not-found";
 import { useAnalytics } from "@/hooks/use-analytics";
 
@@ -46,6 +47,7 @@ function Router() {
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/setup" component={AdminSetup} />
       <Route path="/profile" component={Profile} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route component={NotFound} />
     </Switch>
   );

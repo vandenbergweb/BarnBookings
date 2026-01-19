@@ -168,6 +168,16 @@ export default function Landing() {
           </Card>
         </section>
       </main>
+
+      {/* Footer */}
+      <footer className="bg-barn-navy text-white py-6 px-4 text-center">
+        <p className="text-sm">
+          © {new Date().getFullYear()} The Barn MI. All rights reserved.
+        </p>
+        <p className="text-xs text-gray-400 mt-1">
+          6090 W River Rd, Weidman, MI 48893 | (517) 204-4747
+        </p>
+      </footer>
     </div>
   );
 }

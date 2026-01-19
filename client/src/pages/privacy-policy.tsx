@@ -75,14 +75,14 @@ export default function PrivacyPolicy() {
                   <li>We do not store your credit card or financial information on our servers.</li>
                   <li>All payment data is encrypted and processed directly by Stripe.</li>
                   <li>
-                    You can review{" "}
+                    You can review Stripe's privacy policy{" "}
                     <a 
                       href="https://stripe.com/privacy" 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-barn-green underline hover:text-barn-navy"
                     >
-                      Stripe's privacy policy here
+                      here
                     </a>{" "}
                     for more information on how they handle your data.
                   </li>

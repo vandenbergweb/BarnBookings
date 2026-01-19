@@ -31,7 +31,15 @@ export default function PrivacyPolicy() {
               <section>
                 <h2 className="text-lg font-semibold text-barn-navy mb-2">1. Introduction</h2>
                 <p>
-                  Welcome to The Barn MI. We operate the web application located at https://thebarnmi.com. 
+                  Welcome to The Barn MI. We operate the web application located at{" "}
+                  <a 
+                    href="https://thebarnmi.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-barn-green underline hover:text-barn-navy"
+                  >
+                    https://thebarnmi.com
+                  </a>. 
                   We are committed to protecting your privacy. This policy explains what information we collect, 
                   how we use it, and how we keep it safe.
                 </p>

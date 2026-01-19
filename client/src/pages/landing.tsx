@@ -177,6 +177,9 @@ export default function Landing() {
         <p className="text-xs text-gray-400 mt-1">
           6090 W River Rd, Weidman, MI 48893 | (517) 204-4747
         </p>
+        <p className="text-xs text-gray-400 mt-2">
+          Design by <a href="https://rebeccavandenberg.com/" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">VanDenBerg Web + Creative</a>
+        </p>
       </footer>
     </div>
   );

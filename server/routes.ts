@@ -614,6 +614,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch('/api/auth/user/phone', isAuthenticated, async (req: any, res) => {
+    try {
+      const { phone } = req.body;
+      if (!phone || typeof phone !== 'string') {
+        return res.status(400).json({ message: "Phone number is required" });
+      }
+      await storage.updateUserPhone(req.user.id, phone);
+      res.json({ message: "Phone number updated" });
+    } catch (error) {
+      console.error("Error updating phone:", error);
+      res.status(500).json({ message: "Failed to update phone number" });
+    }
+  });
+
   // Comprehensive production debugging endpoint
   app.get('/api/debug/session-info', async (req: any, res) => {
     try {

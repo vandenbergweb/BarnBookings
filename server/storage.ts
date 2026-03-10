@@ -65,6 +65,7 @@ export interface IStorage {
   getPasswordResetToken(token: string): Promise<{ userId: string; expiresAt: Date; used: boolean } | undefined>;
   markPasswordResetTokenUsed(token: string): Promise<void>;
   updateUserPassword(userId: string, passwordHash: string): Promise<void>;
+  updateUserPhone(userId: string, phone: string): Promise<void>;
   
   // Facility settings operations
   getFacilitySettings(): Promise<FacilitySettings>;
@@ -399,6 +400,13 @@ export class DatabaseStorage implements IStorage {
     await db
       .update(users)
       .set({ passwordHash })
+      .where(eq(users.id, userId));
+  }
+
+  async updateUserPhone(userId: string, phone: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ phone })
       .where(eq(users.id, userId));
   }
 

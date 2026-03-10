@@ -31,6 +31,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  phone: varchar("phone"),
   stripeCustomerId: varchar("stripe_customer_id"),
   // Local auth fields
   passwordHash: varchar("password_hash"), // Only set for local accounts

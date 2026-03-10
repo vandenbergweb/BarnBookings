@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import BookingCalendar from "@/components/booking-calendar";
 import Navigation from "@/components/navigation";
 import { apiRequest } from "@/lib/queryClient";
-import type { Space, Bundle, Booking, BlockedDate, FacilitySettings } from "@shared/schema";
+import { Input } from "@/components/ui/input";
+import type { Space, Bundle, Booking, BlockedDate, FacilitySettings, User } from "@shared/schema";
 
 interface BookingData {
   spaceId?: string;
@@ -36,6 +37,7 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [duration, setDuration] = useState<number>(1);
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
 
   // Redirect to login if not authenticated with debugging
   useEffect(() => {
@@ -76,6 +78,17 @@ export default function BookingPage() {
       setSelectedBundleId("");
     }
   }, [preSelectedSpaceId, preSelectedBundleId, selectedSpaceId, selectedBundleId]);
+
+  const { data: currentUser } = useQuery<User>({
+    queryKey: ["/api/auth/user"],
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (currentUser?.phone) {
+      setPhoneNumber(currentUser.phone);
+    }
+  }, [currentUser]);
 
   const { data: spaces } = useQuery<Space[]>({
     queryKey: ["/api/spaces"],
@@ -236,7 +249,7 @@ export default function BookingPage() {
     return parseFloat(selectedItem.hourlyRate) * duration;
   };
 
-  const handleBooking = () => {
+  const handleBooking = async () => {
     if (!selectedDate || !selectedTime || (!selectedSpaceId && !selectedBundleId)) {
       toast({
         title: "Missing Information",
@@ -244,6 +257,21 @@ export default function BookingPage() {
         variant: "destructive",
       });
       return;
+    }
+
+    if (!phoneNumber.trim()) {
+      toast({
+        title: "Phone Number Required",
+        description: "Please enter your phone number.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await apiRequest("PATCH", "/api/auth/user/phone", { phone: phoneNumber.trim() });
+    } catch (error) {
+      console.error("Error saving phone number:", error);
     }
 
     const [hours, minutes] = selectedTime.split(':').map(Number);
@@ -638,10 +666,26 @@ export default function BookingPage() {
             </CardContent>
           </Card>
 
+          {/* Phone Number */}
+          <Card>
+            <CardContent className="p-4">
+              <Label className="text-barn-navy font-semibold mb-3 block">Phone Number</Label>
+              <Input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="(555) 123-4567"
+                className="w-full"
+                data-testid="input-phone"
+              />
+              <p className="text-xs text-barn-gray mt-1">Required for booking confirmation</p>
+            </CardContent>
+          </Card>
+
           {/* Book Button */}
           <Button
             onClick={handleBooking}
-            disabled={!selectedItem || !selectedTime || createBookingMutation.isPending}
+            disabled={!selectedItem || !selectedTime || !phoneNumber.trim() || createBookingMutation.isPending}
             className="w-full bg-barn-red hover:bg-barn-red/90 text-white py-4 text-lg font-semibold"
             data-testid="button-continue-payment"
           >

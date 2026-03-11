@@ -50,7 +50,7 @@ export interface IStorage {
   createBooking(booking: InsertBooking): Promise<Booking>;
   getUserBookings(userId: string): Promise<Booking[]>;
   getAllBookings(): Promise<Booking[]>;
-  getAllBookingsWithCustomerInfo(): Promise<(Booking & { customerName: string; customerEmail: string })[]>;
+  getAllBookingsWithCustomerInfo(): Promise<(Booking & { customerName: string; customerEmail: string; customerPhone: string | null })[]>;
   getBooking(id: string): Promise<Booking | undefined>;
   updateBookingStatus(id: string, status: string): Promise<Booking>;
   updateBookingPayment(id: string, paymentIntentId: string): Promise<Booking>;
@@ -245,7 +245,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(bookings.startTime));
   }
 
-  async getAllBookingsWithCustomerInfo(): Promise<(Booking & { customerName: string; customerEmail: string })[]> {
+  async getAllBookingsWithCustomerInfo(): Promise<(Booking & { customerName: string; customerEmail: string; customerPhone: string | null })[]> {
     const result = await db
       .select({
         id: bookings.id,
@@ -263,7 +263,8 @@ export class DatabaseStorage implements IStorage {
         createdAt: bookings.createdAt,
         updatedAt: bookings.updatedAt,
         customerName: users.firstName,
-        customerEmail: users.email
+        customerEmail: users.email,
+        customerPhone: users.phone
       })
       .from(bookings)
       .innerJoin(users, eq(bookings.userId, users.id))

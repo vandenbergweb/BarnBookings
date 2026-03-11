@@ -494,6 +494,11 @@ function AdminContent() {
                         <p className={`text-xs ${isPast ? 'text-gray-500' : 'text-barn-gray/70'}`}>
                           {booking.customerEmail}
                         </p>
+                        {(booking as any).customerPhone && (
+                          <p className={`text-xs ${isPast ? 'text-gray-500' : 'text-barn-gray/70'}`}>
+                            📞 {(booking as any).customerPhone}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <p className="text-sm font-medium text-barn-navy">Date & Time</p>

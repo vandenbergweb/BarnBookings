@@ -1117,56 +1117,69 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
               console.error(`Payment succeeded for booking ${bookingId} but booking not found in database`);
             }
             
-            // Send confirmation email
-            const booking = await storage.getBooking(bookingId);
-            if (booking) {
-              const user = await storage.getUser(booking.userId);
-              if (user?.email) {
-                let spaceName = 'Unknown Space';
-                if (booking.spaceId) {
-                  const space = await storage.getSpace(booking.spaceId);
-                  spaceName = space?.name || 'Unknown Space';
-                } else if (booking.bundleId) {
-                  const bundle = await storage.getBundle(booking.bundleId);
-                  spaceName = bundle?.name || 'Unknown Bundle';
-                }
-
-                const emailSent = await sendBookingConfirmation({
-                  to: user.email,
-                  userName: user.firstName || 'Valued Customer',
-                  spaceName,
-                  startTime: booking.startTime,
-                  endTime: booking.endTime,
-                  totalAmount: booking.totalAmount,
-                  bookingId: booking.id,
-                });
-
-                if (emailSent) {
-                  console.log(`Confirmation email sent to ${user.email} for booking ${bookingId}`);
-                } else {
-                  console.error(`Failed to send confirmation email for booking ${bookingId}`);
-                }
-
-                // Create Google Calendar event for confirmed booking
-                try {
-                  let space = null;
-                  let bundle = null;
+            // Send confirmation email and create calendar event
+            try {
+              const booking = await storage.getBooking(bookingId);
+              if (booking) {
+                const user = await storage.getUser(booking.userId);
+                console.log(`Webhook: Fetched booking ${bookingId} and user ${user?.email || 'not found'}`);
+                if (user?.email) {
+                  let spaceName = 'Unknown Space';
                   if (booking.spaceId) {
-                    space = await storage.getSpace(booking.spaceId);
+                    const space = await storage.getSpace(booking.spaceId);
+                    spaceName = space?.name || 'Unknown Space';
                   } else if (booking.bundleId) {
-                    bundle = await storage.getBundle(booking.bundleId);
+                    const bundle = await storage.getBundle(booking.bundleId);
+                    spaceName = bundle?.name || 'Unknown Bundle';
                   }
-                  
-                  const calendarEventId = await createBookingCalendarEvent(booking, user, space, bundle);
-                  if (calendarEventId) {
-                    console.log(`Google Calendar event created for booking ${bookingId}: ${calendarEventId}`);
-                    // Save the calendar event ID to the booking for later deletion if cancelled
-                    await storage.updateBookingCalendarEventId(bookingId, calendarEventId);
+
+                  console.log(`Webhook: Sending confirmation email to ${user.email} for ${spaceName}`);
+                  try {
+                    const emailSent = await sendBookingConfirmation({
+                      to: user.email,
+                      userName: user.firstName || 'Valued Customer',
+                      spaceName,
+                      startTime: booking.startTime,
+                      endTime: booking.endTime,
+                      totalAmount: booking.totalAmount,
+                      bookingId: booking.id,
+                    });
+
+                    if (emailSent) {
+                      console.log(`Confirmation email sent to ${user.email} for booking ${bookingId}`);
+                    } else {
+                      console.error(`Failed to send confirmation email for booking ${bookingId}`);
+                    }
+                  } catch (emailError) {
+                    console.error(`Error sending confirmation email for booking ${bookingId}:`, emailError);
                   }
-                } catch (calendarError) {
-                  console.error(`Failed to create Google Calendar event for booking ${bookingId}:`, calendarError);
+
+                  // Create Google Calendar event for confirmed booking
+                  try {
+                    let space = null;
+                    let bundle = null;
+                    if (booking.spaceId) {
+                      space = await storage.getSpace(booking.spaceId);
+                    } else if (booking.bundleId) {
+                      bundle = await storage.getBundle(booking.bundleId);
+                    }
+                    
+                    const calendarEventId = await createBookingCalendarEvent(booking, user, space, bundle);
+                    if (calendarEventId) {
+                      console.log(`Google Calendar event created for booking ${bookingId}: ${calendarEventId}`);
+                      await storage.updateBookingCalendarEventId(bookingId, calendarEventId);
+                    }
+                  } catch (calendarError) {
+                    console.error(`Failed to create Google Calendar event for booking ${bookingId}:`, calendarError);
+                  }
+                } else {
+                  console.error(`Webhook: No user or email found for booking ${bookingId}`);
                 }
+              } else {
+                console.error(`Webhook: Booking ${bookingId} not found when trying to send email`);
               }
+            } catch (postPaymentError) {
+              console.error(`Webhook: Error in post-payment processing for booking ${bookingId}:`, postPaymentError);
             }
           }
           break;

@@ -102,7 +102,7 @@ This is a React-based web application for "The Barn MI", a professional baseball
 - **APIs**: Payment intents, customer creation, and webhook handling
 
 ## Email Services
-- **SendGrid**: Transactional email delivery
+- **Brevo (formerly Sendinblue)**: Transactional email delivery (replaced SendGrid March 2026)
 - **Use Cases**: Booking confirmations and reminder notifications
 
 ## Authentication Services

@@ -1,10 +1,15 @@
-import sgMail from '@sendgrid/mail';
+import SibApiV3Sdk from 'sib-api-v3-sdk';
 
-if (!process.env.SENDGRID_API_KEY) {
-  throw new Error('Missing required SendGrid API key: SENDGRID_API_KEY');
+const brevoClient = SibApiV3Sdk.ApiClient.instance;
+const apiKey = brevoClient.authentications['api-key'];
+
+if (!process.env.BREVO_API_KEY) {
+  console.warn('Missing BREVO_API_KEY - email sending will be disabled');
 }
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+apiKey.apiKey = process.env.BREVO_API_KEY || '';
+
+const transactionalApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
 interface BookingConfirmationData {
   to: string;
@@ -25,12 +30,29 @@ interface BookingReminderData {
   totalAmount: string;
 }
 
+async function sendEmail(params: { to: string; from: { email: string; name: string }; subject: string; html: string; text: string }): Promise<boolean> {
+  if (!process.env.BREVO_API_KEY) {
+    console.error('Brevo API key not configured, cannot send email');
+    return false;
+  }
+
+  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+  sendSmtpEmail.to = [{ email: params.to }];
+  sendSmtpEmail.sender = { email: params.from.email, name: params.from.name };
+  sendSmtpEmail.subject = params.subject;
+  sendSmtpEmail.htmlContent = params.html;
+  sendSmtpEmail.textContent = params.text;
+
+  const result = await transactionalApi.sendTransacEmail(sendSmtpEmail);
+  console.log('Brevo email sent successfully, messageId:', result?.messageId);
+  return true;
+}
+
 export async function sendBookingConfirmation(data: BookingConfirmationData): Promise<boolean> {
   try {
     const { to, userName, spaceName, startTime, endTime, totalAmount, bookingId } = data;
     
     const formatDate = (date: Date) => {
-      // Create a new date in Eastern Time to avoid timezone conversion issues
       const easternDate = new Date(date.toLocaleString("en-US", {timeZone: "America/New_York"}));
       return easternDate.toLocaleDateString('en-US', { 
         weekday: 'long',
@@ -49,7 +71,7 @@ export async function sendBookingConfirmation(data: BookingConfirmationData): Pr
       });
     };
 
-    const msg = {
+    const sent = await sendEmail({
       to,
       from: {
         email: 'noreply@thebarnmi.com',
@@ -72,7 +94,7 @@ export async function sendBookingConfirmation(data: BookingConfirmationData): Pr
           </div>
 
           <div style="background-color: #22c55e; color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 30px;">
-            <h2 style="margin: 0; font-size: 24px;">🎉 Booking Confirmed!</h2>
+            <h2 style="margin: 0; font-size: 24px;">Booking Confirmed!</h2>
             <p style="margin: 10px 0 0 0; font-size: 16px;">Thank you for choosing The Barn MI</p>
           </div>
 
@@ -113,16 +135,16 @@ export async function sendBookingConfirmation(data: BookingConfirmationData): Pr
           <div style="text-align: center; margin-bottom: 25px;">
             <p style="margin: 0 0 15px 0; color: #666;">Questions about your booking?</p>
             <p style="margin: 0; font-weight: 600; color: #1e3a5f;">
-              📧 info@thebarnmi.com<br>
-              📞 (517) 204-4747<br>
-              📍 6090 W River Rd, Weidman MI 48893
+              info@thebarnmi.com<br>
+              (517) 204-4747<br>
+              6090 W River Rd, Weidman MI 48893
             </p>
           </div>
 
           <div style="text-align: center; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #666; font-size: 14px;">
             <p style="margin: 0;">Booking ID: #${bookingId}</p>
             <p style="margin: 10px 0 0 0;">
-              © ${new Date().getFullYear()} The Barn MI. All rights reserved.<br>
+              &copy; ${new Date().getFullYear()} The Barn MI. All rights reserved.<br>
               Professional Baseball Training Facility
             </p>
           </div>
@@ -156,13 +178,14 @@ Booking ID: #${bookingId}
 
 Thank you for choosing The Barn MI!
 
-© ${new Date().getFullYear()} The Barn MI. All rights reserved.
+(c) ${new Date().getFullYear()} The Barn MI. All rights reserved.
       `
-    };
+    });
 
-    await sgMail.send(msg);
-    console.log(`Booking confirmation email sent to ${to} for booking ${bookingId}`);
-    return true;
+    if (sent) {
+      console.log(`Booking confirmation email sent to ${to} for booking ${bookingId}`);
+    }
+    return sent;
   } catch (error) {
     console.error('Error sending booking confirmation email:', error);
     return false;
@@ -174,7 +197,6 @@ export async function sendBookingReminder(data: BookingReminderData): Promise<bo
     const { to, userName, spaceName, startTime, endTime, totalAmount } = data;
     
     const formatDate = (date: Date) => {
-      // Create a new date in Eastern Time to avoid timezone conversion issues
       const easternDate = new Date(date.toLocaleString("en-US", {timeZone: "America/New_York"}));
       return easternDate.toLocaleDateString('en-US', { 
         weekday: 'long',
@@ -193,7 +215,7 @@ export async function sendBookingReminder(data: BookingReminderData): Promise<bo
       });
     };
 
-    const msg = {
+    const sent = await sendEmail({
       to,
       from: {
         email: 'noreply@thebarnmi.com',
@@ -216,7 +238,7 @@ export async function sendBookingReminder(data: BookingReminderData): Promise<bo
           </div>
 
           <div style="background-color: #3b82f6; color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 30px;">
-            <h2 style="margin: 0; font-size: 24px;">⏰ Session Reminder</h2>
+            <h2 style="margin: 0; font-size: 24px;">Session Reminder</h2>
             <p style="margin: 10px 0 0 0; font-size: 16px;">Your training session is tomorrow!</p>
           </div>
 
@@ -253,15 +275,15 @@ export async function sendBookingReminder(data: BookingReminderData): Promise<bo
           <div style="text-align: center; margin-bottom: 25px;">
             <p style="margin: 0 0 15px 0; color: #666;">Questions or need to reschedule?</p>
             <p style="margin: 0; font-weight: 600; color: #1e3a5f;">
-              📧 info@thebarnmi.com<br>
-              📞 (517) 204-4747<br>
-              📍 6090 W River Rd, Weidman MI 48893
+              info@thebarnmi.com<br>
+              (517) 204-4747<br>
+              6090 W River Rd, Weidman MI 48893
             </p>
           </div>
 
           <div style="text-align: center; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #666; font-size: 14px;">
             <p style="margin: 10px 0 0 0;">
-              © ${new Date().getFullYear()} The Barn MI. All rights reserved.<br>
+              &copy; ${new Date().getFullYear()} The Barn MI. All rights reserved.<br>
               Professional Baseball Training Facility
             </p>
           </div>
@@ -292,13 +314,14 @@ Address: 6090 W River Rd, Weidman MI 48893
 
 See you tomorrow!
 
-© ${new Date().getFullYear()} The Barn MI. All rights reserved.
+(c) ${new Date().getFullYear()} The Barn MI. All rights reserved.
       `
-    };
+    });
 
-    await sgMail.send(msg);
-    console.log(`Booking reminder email sent to ${to}`);
-    return true;
+    if (sent) {
+      console.log(`Booking reminder email sent to ${to}`);
+    }
+    return sent;
   } catch (error) {
     console.error('Error sending booking reminder email:', error);
     return false;
@@ -306,15 +329,13 @@ See you tomorrow!
 }
 
 export async function sendPasswordResetEmail(to: string, customerName: string, resetUrl: string): Promise<boolean> {
-  if (!sgMail) {
-    console.log('SendGrid not configured, skipping password reset email');
-    return false;
-  }
-
   try {
-    const msg = {
+    const sent = await sendEmail({
       to,
-      from: 'info@thebarnmi.com',
+      from: {
+        email: 'info@thebarnmi.com',
+        name: 'The Barn MI'
+      },
       subject: 'Reset Your Password - The Barn MI',
       html: `
         <!DOCTYPE html>
@@ -378,7 +399,7 @@ export async function sendPasswordResetEmail(to: string, customerName: string, r
                 Professional Baseball Training Facility
               </p>
               <p style="margin: 10px 0 0 0; font-size: 12px;">
-                © ${new Date().getFullYear()} The Barn MI. All rights reserved.
+                &copy; ${new Date().getFullYear()} The Barn MI. All rights reserved.
               </p>
             </div>
           </div>
@@ -405,13 +426,14 @@ Email: info@thebarnmi.com
 Phone: (517) 204-4747
 Address: 6090 W River Rd, Weidman MI 48893
 
-© ${new Date().getFullYear()} The Barn MI. All rights reserved.
+(c) ${new Date().getFullYear()} The Barn MI. All rights reserved.
       `
-    };
+    });
 
-    await sgMail.send(msg);
-    console.log(`Password reset email sent to ${to}`);
-    return true;
+    if (sent) {
+      console.log(`Password reset email sent to ${to}`);
+    }
+    return sent;
   } catch (error) {
     console.error('Error sending password reset email:', error);
     return false;

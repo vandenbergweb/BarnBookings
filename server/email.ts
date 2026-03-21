@@ -192,6 +192,152 @@ Thank you for choosing The Barn MI!
   }
 }
 
+interface AdminBookingNotificationData {
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  spaceName: string;
+  startTime: Date;
+  endTime: Date;
+  totalAmount: string;
+  bookingId: string;
+  paymentMethod: string;
+}
+
+export async function sendAdminBookingNotification(data: AdminBookingNotificationData): Promise<boolean> {
+  try {
+    const { customerName, customerEmail, customerPhone, spaceName, startTime, endTime, totalAmount, bookingId, paymentMethod } = data;
+
+    const adminEmail = 'thebarnmi@gmail.com';
+
+    const formatDate = (date: Date) => {
+      const easternDate = new Date(date.toLocaleString("en-US", {timeZone: "America/New_York"}));
+      return easternDate.toLocaleDateString('en-US', { 
+        weekday: 'long',
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric'
+      });
+    };
+
+    const formatTime = (date: Date) => {
+      return date.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        timeZone: 'America/New_York',
+        timeZoneName: 'short'
+      });
+    };
+
+    const sent = await sendEmail({
+      to: adminEmail,
+      from: {
+        email: 'noreply@thebarnmi.com',
+        name: 'The Barn MI'
+      },
+      subject: `New Booking - ${customerName} - ${spaceName}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>New Booking Notification</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #1e3a5f; margin-bottom: 10px;">The Barn MI</h1>
+            <p style="color: #666; font-size: 14px; margin: 0;">Admin Booking Notification</p>
+          </div>
+
+          <div style="background-color: #1e3a5f; color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 30px;">
+            <h2 style="margin: 0; font-size: 24px;">New Booking Received</h2>
+          </div>
+
+          <div style="background-color: #f8fafc; padding: 25px; border-radius: 8px; margin-bottom: 25px;">
+            <h3 style="color: #1e3a5f; margin-top: 0; margin-bottom: 20px; font-size: 20px;">Customer Information</h3>
+            
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #666; font-weight: 500;">Name:</td>
+                <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600; text-align: right;">${customerName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #666; font-weight: 500;">Email:</td>
+                <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600; text-align: right;">${customerEmail}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #666; font-weight: 500;">Phone:</td>
+                <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600; text-align: right;">${customerPhone || 'Not provided'}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #f8fafc; padding: 25px; border-radius: 8px; margin-bottom: 25px;">
+            <h3 style="color: #1e3a5f; margin-top: 0; margin-bottom: 20px; font-size: 20px;">Booking Details</h3>
+            
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #666; font-weight: 500;">Facility:</td>
+                <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600; text-align: right;">${spaceName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #666; font-weight: 500;">Date:</td>
+                <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600; text-align: right;">${formatDate(startTime)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #666; font-weight: 500;">Time:</td>
+                <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600; text-align: right;">${formatTime(startTime)} - ${formatTime(endTime)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #666; font-weight: 500;">Payment:</td>
+                <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600; text-align: right;">${paymentMethod === 'stripe' ? 'Stripe (Online)' : paymentMethod}</td>
+              </tr>
+              <tr>
+                <td style="padding: 15px 0 10px 0; color: #666; font-weight: 500; font-size: 18px;">Total:</td>
+                <td style="padding: 15px 0 10px 0; font-weight: bold; text-align: right; font-size: 20px; color: #22c55e;">$${totalAmount}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="text-align: center; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #666; font-size: 14px;">
+            <p style="margin: 0;">Booking ID: #${bookingId}</p>
+            <p style="margin: 10px 0 0 0;">
+              &copy; ${new Date().getFullYear()} The Barn MI. All rights reserved.
+            </p>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+NEW BOOKING - The Barn MI
+
+CUSTOMER INFORMATION:
+- Name: ${customerName}
+- Email: ${customerEmail}
+- Phone: ${customerPhone || 'Not provided'}
+
+BOOKING DETAILS:
+- Facility: ${spaceName}
+- Date: ${formatDate(startTime)}
+- Time: ${formatTime(startTime)} - ${formatTime(endTime)}
+- Payment: ${paymentMethod === 'stripe' ? 'Stripe (Online)' : paymentMethod}
+- Total: $${totalAmount}
+
+Booking ID: #${bookingId}
+      `
+    });
+
+    if (sent) {
+      console.log(`Admin booking notification sent to ${adminEmail} for booking ${bookingId}`);
+    }
+    return sent;
+  } catch (error) {
+    console.error('Error sending admin booking notification:', error);
+    return false;
+  }
+}
+
 export async function sendBookingReminder(data: BookingReminderData): Promise<boolean> {
   try {
     const { to, userName, spaceName, startTime, endTime, totalAmount } = data;

@@ -7,7 +7,7 @@ import { registerSchema, loginSchema, passwordResetRequestSchema, passwordResetS
 import { setupAuth, isAuthenticated, validateSession } from "./localAuth";
 import { isAdmin } from "./adminAuth";
 import { insertBookingSchema } from "@shared/schema";
-import { sendBookingConfirmation, sendBookingReminder, sendPasswordResetEmail } from "./email";
+import { sendBookingConfirmation, sendBookingReminder, sendPasswordResetEmail, sendAdminBookingNotification } from "./email";
 import { createBookingCalendarEvent, testCalendarConnection, deleteCalendarEvent } from "./googleCalendar";
 import { nanoid } from "nanoid";
 import bcrypt from "bcryptjs";
@@ -1154,6 +1154,28 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
                     console.error(`Error sending confirmation email for booking ${bookingId}:`, emailError);
                   }
 
+                  try {
+                    const adminEmailSent = await sendAdminBookingNotification({
+                      customerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown',
+                      customerEmail: user.email,
+                      customerPhone: user.phone || '',
+                      spaceName,
+                      startTime: booking.startTime,
+                      endTime: booking.endTime,
+                      totalAmount: booking.totalAmount,
+                      bookingId: booking.id,
+                      paymentMethod: 'stripe',
+                    });
+
+                    if (adminEmailSent) {
+                      console.log(`Admin notification sent for booking ${bookingId}`);
+                    } else {
+                      console.error(`Failed to send admin notification for booking ${bookingId}`);
+                    }
+                  } catch (adminEmailError) {
+                    console.error(`Error sending admin notification for booking ${bookingId}:`, adminEmailError);
+                  }
+
                   // Create Google Calendar event for confirmed booking
                   try {
                     let space = null;
@@ -1339,6 +1361,22 @@ Request headers: ${JSON.stringify(req.headers, null, 2)}
           totalAmount: booking.totalAmount,
           bookingId: booking.id,
         });
+      }
+
+      try {
+        await sendAdminBookingNotification({
+          customerName: `${customer?.firstName || ''} ${customer?.lastName || ''}`.trim() || customerEmail,
+          customerEmail: customerEmail,
+          customerPhone: customer?.phone || '',
+          spaceName,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          totalAmount: booking.totalAmount,
+          bookingId: booking.id,
+          paymentMethod,
+        });
+      } catch (adminEmailError) {
+        console.error(`Error sending admin notification for admin booking ${booking.id}:`, adminEmailError);
       }
 
       // Create Google Calendar event for admin booking
